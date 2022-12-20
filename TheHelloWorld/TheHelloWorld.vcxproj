@@ -80,6 +80,7 @@
     <CudaCompile Include="main.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="constants.h" />
     <ClInclude Include="data.h" />
     <ClInclude Include="neural_math.h" />
     <ClInclude Include="node.h" />
