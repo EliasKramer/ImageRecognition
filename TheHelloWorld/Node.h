@@ -1,10 +1,16 @@
 #pragma once
+#include <string>
 
 typedef struct{
 	float bias;
 	float* weights;
 	float value;
 } node;
+
+typedef struct {
+	float value;
+} input_node;
+
 typedef struct{
 	node node;
 	std::string output_name;

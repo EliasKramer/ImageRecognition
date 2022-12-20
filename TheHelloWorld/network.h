@@ -4,7 +4,7 @@
 #include "data.h"
 
 typedef struct {
-	node input_nodes[INPUT_PIC_DIMENSION_X * INPUT_PIC_DIMENSION_Y];
+	input_node* input_nodes;
 	node** hidden_nodes;
 	output_node* output_nodes;
 } neural_network;

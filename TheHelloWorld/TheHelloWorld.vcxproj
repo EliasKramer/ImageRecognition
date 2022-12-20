@@ -82,6 +82,7 @@
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="data.h" />
+    <ClInclude Include="network.h" />
     <ClInclude Include="neural_math.h" />
     <ClInclude Include="node.h" />
     <ClInclude Include="resource.h" />
@@ -91,6 +92,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="data.cpp" />
+    <ClCompile Include="network.cpp" />
     <ClCompile Include="neural_math.cpp" />
     <ClCompile Include="node.cpp" />
   </ItemGroup>
