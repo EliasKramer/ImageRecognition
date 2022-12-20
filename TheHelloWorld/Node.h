@@ -7,7 +7,7 @@ typedef struct{
 } node;
 typedef struct{
 	node node;
-	char* output_name;
+	std::string output_name;
 } output_node;
 
 node* create_node(int num_weights);
