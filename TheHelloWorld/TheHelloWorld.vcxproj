@@ -77,10 +77,34 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="main.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="data.h" />
+    <ClInclude Include="neural_math.h" />
+    <ClInclude Include="node.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="TheHelloWorld.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="data.cpp" />
+    <ClCompile Include="neural_math.cpp" />
+    <ClCompile Include="node.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.8.targets" />
+    <Import Project="..\packages\LodePNG.1.2.0\build\native\lodepng.targets" Condition="Exists('..\packages\LodePNG.1.2.0\build\native\lodepng.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\LodePNG.1.2.0\build\native\lodepng.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\LodePNG.1.2.0\build\native\lodepng.targets'))" />
+  </Target>
 </Project>
