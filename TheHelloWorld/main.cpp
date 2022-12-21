@@ -12,8 +12,8 @@ int main()
 
 	//input_picture* x = create_struct_from_file(TRAINING_DATA_PATH + "digit_0\\4558.png");
 	//print_picture(*x);
-	neural_network* nn = create_neural_network(16, 16);
-	
+	neural_network* nn = create_neural_network(2, 16);
+	//free_neural_network(nn);
 	
 	return 0;
 }
