@@ -7,7 +7,7 @@
 #include "constants.h"
 
 typedef struct {
-	float pixel_arr[INPUT_PIC_DIMENSION_X][INPUT_PIC_DIMENSION_Y];
+	float pixels[INPUT_PIC_DIMENSION_X][INPUT_PIC_DIMENSION_Y];
 } input_picture;
 
 input_picture* create_input_picture();

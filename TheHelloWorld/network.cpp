@@ -14,7 +14,7 @@ neural_network* create_neural_network(int num_hidden_layers, int num_nodes_per_h
 
 	//malloc input nodes
 	int num_input_nodes = INPUT_PIC_DIMENSION_X * INPUT_PIC_DIMENSION_Y;
-	nn->input_nodes = new input_node[num_input_nodes];
+	nn->input_nodes = new node[num_input_nodes];
 	/*if (nn->input_nodes == nullptr)
 	{
 		std::cerr << "Error: Could not allocate memory for input nodes." << std::endl;
@@ -24,6 +24,7 @@ neural_network* create_neural_network(int num_hidden_layers, int num_nodes_per_h
 	for (int i = 0; i < num_input_nodes; i++)
 	{
 		nn->input_nodes[i].value = 0;
+		nn->input_nodes[i].node = nullptr;
 	}
 
 	
@@ -58,10 +59,11 @@ neural_network* create_neural_network(int num_hidden_layers, int num_nodes_per_h
 		for (int j = 0; j < num_nodes_per_hidden_layer; j++)
 		{
 			nn->hidden_nodes[i][j].value = 0;
-			nn->hidden_nodes[i][j].bias = 0;
-			int curr_weights = (i == 0) ? num_input_nodes : num_nodes_per_hidden_layer;
 			
-			nn->hidden_nodes[i][j].weights = new float[curr_weights];// (float*)malloc(sizeof(float) * curr_weights);
+			nn->hidden_nodes[i][j].node = new functional_node;
+			nn->hidden_nodes[i][j].node->bias= 0;
+			int curr_weights = (i == 0) ? num_input_nodes : num_nodes_per_hidden_layer;
+			nn->hidden_nodes[i][j].node->weights = new float[curr_weights];// (float*)malloc(sizeof(float) * curr_weights);
 			
 			/*
 			if (nn->hidden_nodes[i][j].weights == nullptr)
@@ -83,7 +85,7 @@ neural_network* create_neural_network(int num_hidden_layers, int num_nodes_per_h
 			*/
 			for (int k = 0; k < curr_weights; k++)
 			{
-				nn->hidden_nodes[i][j].weights[k] = 0;
+				nn->hidden_nodes[i][j].node->weights[k] = 0;
 			}
 		}
 	}
@@ -109,13 +111,14 @@ neural_network* create_neural_network(int num_hidden_layers, int num_nodes_per_h
 	*/
 	for (int i = 0; i < 9; i++)
 	{
-		nn->output_nodes[i].node.bias = 0;
-		nn->output_nodes[i].node.value = 0;
-
 		std::string output_string = "OUTPUT: " + std::to_string(i);
 		nn->output_nodes[i].output_name = output_string;
+
+		nn->output_nodes[i].node.value = 0;
 		
-		nn->output_nodes[i].node.weights = new float[num_nodes_per_hidden_layer];// (float*)malloc(sizeof(float) * num_nodes_per_hidden_layer);
+		nn->output_nodes[i].node.node = new functional_node;
+		nn->output_nodes[i].node.node->bias = 0;
+		nn->output_nodes[i].node.node->weights = new float[num_nodes_per_hidden_layer];// (float*)malloc(sizeof(float) * num_nodes_per_hidden_layer);
 		/*
 		if (nn->output_nodes[i].node.weights == nullptr)
 		{
@@ -144,7 +147,7 @@ neural_network* create_neural_network(int num_hidden_layers, int num_nodes_per_h
 
 void free_neural_network(neural_network* nn)
 {
-	// Free output nodes
+	/*// Free output nodes
 	for (int i = 0; i < 9; i++)
 	{
 		delete[] nn->output_nodes[i].node.weights;
@@ -170,5 +173,34 @@ void free_neural_network(neural_network* nn)
 	delete[] nn->input_nodes;
 
 	// Free neural network
-	delete nn;
+	delete nn;*/
+}
+
+void set_input_nodes(input_picture& pic, neural_network& nn)
+{
+	for (int y = 0; y < INPUT_PIC_DIMENSION_Y; y++)
+	{
+		for (int x = 0; x < INPUT_PIC_DIMENSION_X; x++)
+		{
+			nn.input_nodes[y * INPUT_PIC_DIMENSION_X + x].value = pic.pixels[y][x];
+		}
+	}
+}
+
+void process(neural_network& nn)
+{
+	for (int i = 0; i < nn.num_hidden_layers; i++)
+	{
+		for (int j = 0; j < nn.num_nodes_per_hidden_layer; j++)
+		{
+			node* input_nodes = (i == 0) ? nn.input_nodes : nn.hidden_nodes[i - 1];
+			int num_input_nodes = (i == 0) ? INPUT_PIC_DIMENSION_X * INPUT_PIC_DIMENSION_Y : nn.num_nodes_per_hidden_layer;
+			
+			calculate(*nn.hidden_nodes[i], input_nodes, num_input_nodes);
+		}
+	}
+	for (int i = 0; i < 9; i++)
+	{
+		calculate(nn.output_nodes[i].node, nn.hidden_nodes[nn.num_hidden_layers - 1], nn.num_nodes_per_hidden_layer);
+	}
 }

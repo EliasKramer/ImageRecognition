@@ -1,12 +1,11 @@
 #include "node.h"
 #include <memory>
-node* create_node(int num_weights)
+void calculate(node& n, node* input_nodes, int num_input_nodes)
 {
-	node* n = (node*)malloc(sizeof(node));
-    return nullptr;
-}
-
-void delete_node(node* n)
-{
-	free(n);
+	float sum = 0;
+	for (int i = 0; i < num_input_nodes; i++)
+	{
+		sum += input_nodes[i].value * n.node->weights[i];
+	}
+	n.value = sigmoid(sum + n.node->bias);
 }
