@@ -73,10 +73,10 @@ void delete_network(n_network& network)
 	}
 	delete[] network.biases;
 
+	//throws error here
+	delete[] network.biases;
 	//delete weights and biases arrays
 	delete[] network.weights;
-	//throws error here
-	//delete[] network.biases;
 
 	//delete layer sizes
 	delete[] network.layer_sizes;

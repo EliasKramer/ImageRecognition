@@ -1,3 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="kernel.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="neural_network.cpp">
+      <Filter>cpp_files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="header">
+      <UniqueIdentifier>{0804e8b2-dd1d-4c3f-87a1-8b3a6171769f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cpp_files">
+      <UniqueIdentifier>{03e28230-87ec-4e4a-a0c6-a7c2cbe3c356}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="neural_network.h">
+      <Filter>header</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

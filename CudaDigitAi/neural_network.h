@@ -6,8 +6,13 @@ typedef struct {
 	int num_layers;
 	int* layer_sizes;
 
+	//start at idx 0 and go to n
 	float** activations;
+	//weights start at idx 0 and go to n-1
+	//next idx is current node
+	//next idx is the next layer node
 	float*** weights;
+	//biases start at idx 1 and go to n
 	float** biases;
 } n_network;
 
