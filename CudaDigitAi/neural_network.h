@@ -2,6 +2,10 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
+#include <chrono>
+#include <random>
+#include "training_data.h"
 
 typedef struct {
 	int num_layers;
@@ -17,14 +21,7 @@ typedef struct {
 	float** biases;
 } n_network;
 
-typedef struct {
-	float** matrix;
-	int rows;
-	int cols;
-	std::string label;
-} training_data;
-
-typedef std::vector<training_data> training_data_set;
+typedef std::vector<training_data> training_data_set;	
 
 n_network& create_network(int input_size, int num_of_hidden_layers, int hidden_layer_size, int num_of_output_layer);
 void delete_network(n_network& network);
@@ -35,3 +32,6 @@ void apply_noise(n_network& network, float noise_range);
 void print_output_data(n_network& network);
 std::string get_output_label(n_network& network);
 float get_cost(n_network& network);
+
+void print_weights(n_network& network);
+void print_biases(n_network& network);	

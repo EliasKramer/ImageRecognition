@@ -6,6 +6,57 @@ inline float sigmoid(float x)
 	return 1.0f / (1.0f + exp(-x));
 }
 
+inline float cost(float actual, float expected)
+{
+	return (actual - expected) * (actual - expected);
+}
+
+inline float rand_between(float min, float max)
+{
+	// Get the current time as a seed
+	auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+
+	// Create a random engine and distribution
+	std::default_random_engine engine(seed);
+	std::uniform_real_distribution<float> distribution(min, max);
+
+	// Generate a random number within the given range
+	return distribution(engine);
+}
+
+void init_network(n_network& network)
+{
+	//set activations to 0
+	for (int i = 0; i < network.num_layers; i++)
+	{
+		for (int j = 0; j < network.layer_sizes[i]; j++)
+		{
+			network.activations[i][j] = 0.0f;
+		}
+	}
+
+	//set weights to 0
+	for (int i = 0; i < network.num_layers - 1; i++)
+	{
+		for (int j = 0; j < network.layer_sizes[i]; j++)
+		{
+			for (int k = 0; k < network.layer_sizes[i + 1]; k++)
+			{
+				network.weights[i][j][k] = 0.0f;
+			}
+		}
+	}
+
+	//set biases to 0
+	for (int i = 0; i < network.num_layers - 1; i++)
+	{
+		for (int j = 0; j < network.layer_sizes[i + 1]; j++)
+		{
+			network.biases[i][j] = 0.0f;
+		}
+	}
+}
+
 //public functions
 
 n_network& create_network(
@@ -53,6 +104,8 @@ n_network& create_network(
 		}
 	}
 
+	init_network(*network);
+	
 	return *network;
 }
 
@@ -134,18 +187,36 @@ void feed_forward(n_network& network)
 
 void apply_noise(n_network& network, float noise_range)
 {
-	for (int i = 0; i < network.num_layers; i++)
+	//for weights
+	for (int i = 0; i < network.num_layers - 1; i++)
 	{
-		for (int node_idx = 0; node_idx < network.layer_sizes[i]; node_idx++)
+		for (int j = 0; j < network.layer_sizes[i]; j++)
 		{
-			network.activations[i][node_idx] += (rand() % 100) / 100.0f * noise_range * 2 - noise_range;
+			for (int k = 0; k < network.layer_sizes[i + 1]; k++)
+			{
+				network.weights[i][j][k] += rand_between(-noise_range, noise_range);
+			}
+		}
+	}
+	//for biases
+	for (int i = 0; i < network.num_layers - 1; i++)
+	{
+		for (int j = 0; j < network.layer_sizes[i + 1]; j++)
+		{
+			network.biases[i][j] += rand_between(-noise_range, noise_range);
 		}
 	}
 }
 
 void print_output_data(n_network& network)
 {
-	
+	std::cout << std::endl << "-----------------------------" << std::endl;
+	for (int i = 0; i < network.layer_sizes[network.num_layers-1]; i++)
+	{
+		float activation = network.activations[network.num_layers - 1][i];
+		std::cout << i << " value: " << activation << "\n";
+	}
+	std::cout << "-----------------------------" << std::endl;
 }
 
 std::string get_output_label(n_network& network)
@@ -168,4 +239,35 @@ std::string get_output_label(n_network& network)
 float get_cost(n_network& network)
 {
 	return 0.0f;
+}
+
+
+void print_weights(n_network& network)
+{
+	for (int i = 0; i < network.num_layers - 1; i++)
+	{
+		std::cout << "Layer " << i << " weights: " << std::endl;
+		for (int j = 0; j < network.layer_sizes[i]; j++)
+		{
+			for (int k = 0; k < network.layer_sizes[i + 1]; k++)
+			{
+				std::cout << network.weights[i][j][k] << " ";
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
+}
+
+void print_biases(n_network& network)
+{
+	for (int i = 0; i < network.num_layers - 1; i++)
+	{
+		std::cout << "Layer " << i << " biases: " << std::endl;
+		for (int j = 0; j < network.layer_sizes[i + 1]; j++)
+		{
+			std::cout << network.biases[i][j] << " ";
+		}
+		std::cout << std::endl;
+	}
 }
