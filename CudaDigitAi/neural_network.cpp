@@ -143,15 +143,14 @@ void delete_network(n_network& network)
 	delete[] network.layer_sizes;
 }
 
-void set_input(n_network& network, training_data& training_data)
+void set_input(n_network& network, digit_image& training_data)
 {
 	//can be removed for more performance
 
 	if (network.layer_sizes[0] != (training_data.cols * training_data.rows))
 	{
-		printf("Error: input size does not match network input size\n");
-		throw "Error: input size does not match network input size";
-		return;
+		std::cerr << "Error: input size does not match network input size";
+		exit(1);
 	}
 
 	for (int y = 0; y < training_data.rows; y++)
@@ -239,6 +238,23 @@ std::string get_output_label(n_network& network)
 float get_cost(n_network& network)
 {
 	return 0.0f;
+}
+
+float test_nn(n_network& network, digit_image_collection& training_data_collection)
+{
+	//returns the percentage of correct answers
+	int correct_answers = 0;
+	for (digit_image& curr : training_data_collection)
+	{
+		set_input(network, curr);
+		feed_forward(network);
+		std::string output_label = get_output_label(network);
+		if (output_label == curr.label)
+		{
+			correct_answers++;
+		}
+	}
+	return (float)correct_answers / (float)training_data_collection.size() * 100;
 }
 
 

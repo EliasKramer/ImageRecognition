@@ -7,7 +7,13 @@ int swap_endian(int value) {
     result |= ((value >> 24) & 0xFF);
     return result;
 }
-void print_training_data(training_data& data)
+//determins wether the system is little endian or big endian
+bool is_little_endian()
+{
+    int num = 1;
+	return (*(char*)&num == 1);
+}
+void print_training_data(digit_image& data)
 {
     //print the two dimensional float array of the image in the according colors
     std::cout << std::endl << "-------------------------------------" << std::endl;
@@ -18,26 +24,31 @@ void print_training_data(training_data& data)
         {
             if (data.matrix[y][x] == 0)
             {
-				std::cout << " ";
+				std::cout << "  ";
 			}
             else if (data.matrix[y][x] < 0.5)
             {
-				std::cout << ".";
+				std::cout << ". ";
 			}
             else
             {
-				std::cout << "#";
+				std::cout << "# ";
 			}
 		}
 		std::cout << std::endl;
 	}
     std::cout << std::endl << "-------------------------------------" << std::endl;
+
 }
 
-std::vector<training_data> load_mnist_data(std::string data_file_path, std::string label_file_path) {
-    std::vector<training_data> mnist_data;
+digit_image_collection load_mnist_data(std::string data_file_path, std::string label_file_path) {
+    digit_image_collection mnist_data;
     // Check if data file exists
     std::ifstream data_file1(data_file_path, std::ios::binary);
+    
+    //get actual path used
+    //std::filesystem::path path = std::filesystem::current_path();
+
     if (!data_file1) {
         std::cerr << "Data file does not exist" << std::endl;
         exit(1);
@@ -58,11 +69,13 @@ std::vector<training_data> load_mnist_data(std::string data_file_path, std::stri
     data_file.read((char*)&rows, sizeof(rows));
     data_file.read((char*)&cols, sizeof(cols));
 
+    if (is_little_endian())
+    {
         magic_number = swap_endian(magic_number);
         num_images = swap_endian(num_images);
         rows = swap_endian(rows);
         cols = swap_endian(cols);
-    
+    }
 
     // Open the label file and read the magic number and number of labels
     std::ifstream label_file(label_file_path, std::ios::binary);
@@ -70,10 +83,11 @@ std::vector<training_data> load_mnist_data(std::string data_file_path, std::stri
     label_file.read((char*)&label_magic_number, sizeof(label_magic_number));
     label_file.read((char*)&num_labels, sizeof(num_labels));
 
-
+    if (is_little_endian())
+    {
         label_magic_number = swap_endian(label_magic_number);
         num_labels = swap_endian(num_labels);
-
+    }
 
     // Check that the magic numbers and number of items match
     if (magic_number != 2051 || label_magic_number != 2049 || num_images != num_labels) {
@@ -94,7 +108,7 @@ std::vector<training_data> load_mnist_data(std::string data_file_path, std::stri
         }
         unsigned char label;
         label_file.read((char*)&label, sizeof(label));
-        training_data data;
+        digit_image data;
         data.matrix = image;
         data.rows = rows;
         data.cols = cols;

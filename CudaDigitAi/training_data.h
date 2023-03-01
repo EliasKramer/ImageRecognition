@@ -10,7 +10,9 @@ typedef struct {
     int rows;
     int cols;
     std::string label;
-} training_data;
+} digit_image;
 
-void print_training_data(training_data& data);
-std::vector<training_data> load_mnist_data(std::string data_file_path, std::string label_file_path);
+typedef std::vector<digit_image> digit_image_collection;
+
+void print_training_data(digit_image& data);
+digit_image_collection load_mnist_data(std::string data_file_path, std::string label_file_path);
