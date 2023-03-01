@@ -11,6 +11,17 @@ inline float cost(float actual, float expected)
 	return (actual - expected) * (actual - expected);
 }
 
+inline float sigmoid_derivative(float x)
+{
+	float sigmoid_activation = sigmoid(x);
+	return sigmoid_activation * (1.0f - sigmoid_activation);
+}
+
+inline float cost_derivative(float actual, float expected)
+{
+	return 2.0f * (actual - expected);
+}
+
 inline float rand_between(float min, float max)
 {
 	// Get the current time as a seed
@@ -104,6 +115,13 @@ n_network& create_network(
 		}
 	}
 
+	//init labels
+	network->labels = new std::string[network->layer_sizes[network->num_layers - 1]];
+	for (int i = 0; i < network->layer_sizes[network->num_layers - 1]; i++)
+	{
+		network->labels[i] = std::to_string(i);
+	}
+
 	init_network(*network);
 	
 	return *network;
@@ -141,9 +159,12 @@ void delete_network(n_network& network)
 
 	//delete layer sizes
 	delete[] network.layer_sizes;
+
+	//delete labels
+	delete[] network.labels;
 }
 
-void set_input(n_network& network, digit_image& training_data)
+void set_input(n_network& network, const digit_image& training_data)
 {
 	//can be removed for more performance
 
@@ -240,11 +261,11 @@ float get_cost(n_network& network)
 	return 0.0f;
 }
 
-float test_nn(n_network& network, digit_image_collection& training_data_collection)
+float test_nn(n_network& network, const digit_image_collection& training_data_collection)
 {
 	//returns the percentage of correct answers
 	int correct_answers = 0;
-	for (digit_image& curr : training_data_collection)
+	for (const digit_image& curr : training_data_collection)
 	{
 		set_input(network, curr);
 		feed_forward(network);
@@ -255,6 +276,60 @@ float test_nn(n_network& network, digit_image_collection& training_data_collecti
 		}
 	}
 	return (float)correct_answers / (float)training_data_collection.size() * 100;
+}
+
+void train_on_images(n_network& network, digit_image_collection& training_data_collection, int num_epochs)
+{
+	for each (const digit_image& curr in training_data_collection)
+	{
+		set_input(network, curr);
+		feed_forward(network);
+
+		for (int i = 0; i < network.layer_sizes[network.num_layers - 1]; i++)
+		{
+			float activation = network.activations[network.num_layers - 1][i];
+			float expected = 0.0f;
+			if (curr.label == std::to_string(i))
+			{
+				expected = 1.0f;
+			}
+			float bias = network.biases[network.num_layers - 2][i];
+			float weighted_inputs = 0.0f;
+			for (int j = 0; j < network.layer_sizes[network.num_layers - 2]; j++)
+			{
+				weighted_inputs += network.weights[network.num_layers - 2][j][i] * network.activations[network.num_layers - 2][j];
+			}
+
+			float d_cost = cost_derivative(activation, expected);
+			float d_sigmoid = sigmoid_derivative(weighted_inputs);
+			float desired_change = d_cost * d_sigmoid;
+			//network.costs[network.num_layers - 1][i] = cost;
+		}
+	}
+}
+
+void backprop(n_network& network, int current_layer_idx, float* unhappiness_prev, int unhappiness_prev_size)
+{
+	if (current_layer_idx == 0)
+	{
+		return;
+	}
+
+	float* unhappiness = new float[network.layer_sizes[current_layer_idx]];
+
+	int prev_layer_idx = current_layer_idx - 1;
+	for (int i = 0; i < network.layer_sizes[current_layer_idx]; i++)
+	{
+		float activation = network.activations[current_layer_idx][i];
+		float desired_change = 0.0f;
+		for (int j = 0; j < network.layer_sizes[prev_layer_idx]; j++)
+		{
+			desired_change += activation * unhappiness_prev[j];
+		}
+		unhappiness[i] = desired_change;
+		//1 is the derivative of the bias in the activation function a * w + b
+		float desired_b_change = 1 * unhappiness[i];
+	}
 }
 
 
