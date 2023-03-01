@@ -13,27 +13,27 @@ bool is_little_endian()
     int num = 1;
 	return (*(char*)&num == 1);
 }
-void print_training_data(digit_image& data)
+void print_digit_image(digit_image& data)
 {
     //print the two dimensional float array of the image in the according colors
     std::cout << std::endl << "-------------------------------------" << std::endl;
     std::cout << "Label: " << data.label << std::endl;
-    for (int y = 0; y < data.rows; y++)
+    for (int y = 0; y < IMAGE_SIZE_Y; y++)
     {
-        for (int x = 0; x < data.cols; x++)
+        for (int x = 0; x < IMAGE_SIZE_X; x++)
         {
             if (data.matrix[y][x] == 0)
             {
-				std::cout << "  ";
-			}
+                std::cout << "  ";
+            }
             else if (data.matrix[y][x] < 0.5)
             {
-				std::cout << ". ";
-			}
+                std::cout << ". ";
+            }
             else
             {
-				std::cout << "# ";
-			}
+                std::cout << "# ";
+            }
 		}
 		std::cout << std::endl;
 	}
@@ -43,32 +43,43 @@ void print_training_data(digit_image& data)
 
 digit_image_collection load_mnist_data(std::string data_file_path, std::string label_file_path) {
     digit_image_collection mnist_data;
-    // Check if data file exists
-    std::ifstream data_file1(data_file_path, std::ios::binary);
     
-    //get actual path used
-    //std::filesystem::path path = std::filesystem::current_path();
+    //get the path where the program is executed
+    std::filesystem::path path = std::filesystem::current_path();
+    //go to folder where the data directory is located
+    path = path.parent_path();
+    
+    //replace all backslashes with forward slashes
+    std::string base_path = path.string();
+    std::replace(base_path.begin(), base_path.end(), '\\', '/');
 
-    if (!data_file1) {
-        std::cerr << "Data file does not exist" << std::endl;
+    std::string full_data_path = base_path + data_file_path;
+    std::string full_label_path = base_path + label_file_path;
+    
+    std::cout << "reading images from " << full_data_path << std::endl;
+    std::cout << "reading labels from " << full_label_path << std::endl;
+
+    //check if files exists
+    if (!std::filesystem::exists(std::filesystem::path(full_data_path)) ||
+        !std::filesystem::exists(std::filesystem::path(full_label_path)))
+    {
+        std::cerr << "A file does not exist" << std::endl;
         exit(1);
     }
 
-    // Check if label file exists
-    std::ifstream label_file1(label_file_path, std::ios::binary);
-    if (!label_file1) {
-        std::cerr << "Label file does not exist" << std::endl;
-        exit(1);
-    }
-
-    // Open the data file and read the magic number and number of images
-    std::ifstream data_file(data_file_path, std::ios::binary);
+    //Open the data file and read the magic number and number of images
+    //The magic number is there to check if the file is read correctly
+    std::ifstream data_file(full_data_path, std::ios::binary);
     int magic_number, num_images, rows, cols;
+    //can be improved with structs
     data_file.read((char*)&magic_number, sizeof(magic_number));
     data_file.read((char*)&num_images, sizeof(num_images));
     data_file.read((char*)&rows, sizeof(rows));
     data_file.read((char*)&cols, sizeof(cols));
 
+    //the magic number is stored in big endian, 
+    //so we need to swap the bytes, 
+    //if we are on a little endian system
     if (is_little_endian())
     {
         magic_number = swap_endian(magic_number);
@@ -78,7 +89,7 @@ digit_image_collection load_mnist_data(std::string data_file_path, std::string l
     }
 
     // Open the label file and read the magic number and number of labels
-    std::ifstream label_file(label_file_path, std::ios::binary);
+    std::ifstream label_file(full_label_path, std::ios::binary);
     int label_magic_number, num_labels;
     label_file.read((char*)&label_magic_number, sizeof(label_magic_number));
     label_file.read((char*)&num_labels, sizeof(num_labels));
@@ -91,34 +102,46 @@ digit_image_collection load_mnist_data(std::string data_file_path, std::string l
 
     // Check that the magic numbers and number of items match
     if (magic_number != 2051 || label_magic_number != 2049 || num_images != num_labels) {
-        std::cout << "Error: Invalid MNIST data files" << std::endl;
-        return mnist_data;
+        std::cerr << "Error: Invalid MNIST data files" << std::endl;
+        exit(1);
     }
 
-    // Read each image and label and store them in a training_data struct
+    //read all pixel values and labels at once, 
+    //because reading from a file is a very costly operation
+    int image_buffer_size = num_images * rows * cols;
+    char* image_buffer = new char[image_buffer_size];
+    data_file.read(image_buffer, image_buffer_size);
+
+    char* label_buffer = new char[num_labels];
+    label_file.read(label_buffer, num_labels);
+
+    digit_image current_image;
+
     for (int i = 0; i < num_images; i++) {
-        float** image = new float* [rows];
+        
         for (int j = 0; j < rows; j++) {
-            image[j] = new float[cols];
             for (int k = 0; k < cols; k++) {
-                unsigned char pixel;
-                data_file.read((char*)&pixel, sizeof(pixel));
-                image[j][k] = (float)pixel / 255.0;
+
+                int pixel_idx = i * rows * cols + j * cols + k;
+                //why is this "reading invalid data from image_buffer" ?
+                unsigned char pixel = image_buffer[pixel_idx];
+
+                current_image.matrix[j][k] = (float)pixel / 255.0;
             }
         }
-        unsigned char label;
-        label_file.read((char*)&label, sizeof(label));
-        digit_image data;
-        data.matrix = image;
-        data.rows = rows;
-        data.cols = cols;
-        data.label = std::to_string(label);
-        mnist_data.push_back(data);
+
+        unsigned char label = label_buffer[i];
+        current_image.label = std::to_string(label);
+
+        //push back creates a copy of the object
+        mnist_data.push_back(current_image);
     }
 
+    delete[] image_buffer;
+    delete[] label_buffer;
 
-    // Close the files and return the data
     data_file.close();
     label_file.close();
+
     return mnist_data;
 }

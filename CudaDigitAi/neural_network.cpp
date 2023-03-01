@@ -147,17 +147,17 @@ void set_input(n_network& network, digit_image& training_data)
 {
 	//can be removed for more performance
 
-	if (network.layer_sizes[0] != (training_data.cols * training_data.rows))
+	if (network.layer_sizes[0] != (IMAGE_SIZE_X * IMAGE_SIZE_Y))
 	{
 		std::cerr << "Error: input size does not match network input size";
 		exit(1);
 	}
 
-	for (int y = 0; y < training_data.rows; y++)
+	for (int y = 0; y < IMAGE_SIZE_Y; y++)
 	{
-		for (int x = 0; x < training_data.cols; x++)
+		for (int x = 0; x < IMAGE_SIZE_X; x++)
 		{
-			int idx = y * training_data.cols + x;
+			int idx = y * IMAGE_SIZE_X + x;
 			network.activations[0][idx] = training_data.matrix[x][y];
 		}
 	}
