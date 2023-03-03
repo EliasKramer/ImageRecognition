@@ -280,31 +280,45 @@ float test_nn(n_network& network, const digit_image_collection& training_data_co
 
 void train_on_images(n_network& network, digit_image_collection& training_data_collection, int num_epochs)
 {
+	int output_idx = network.num_layers - 1;
+
 	for each (const digit_image& curr in training_data_collection)
 	{
 		set_input(network, curr);
 		feed_forward(network);
 
-		for (int i = 0; i < network.layer_sizes[network.num_layers - 1]; i++)
+		float* unhappiness_for_next_layer = new float[network.layer_sizes[output_idx]];
+		for (int i = 0; i < network.layer_sizes[output_idx]; i++)
 		{
-			float activation = network.activations[network.num_layers - 1][i];
+			float activation = network.activations[output_idx][i];
 			float expected = 0.0f;
 			if (curr.label == std::to_string(i))
 			{
 				expected = 1.0f;
 			}
 			float bias = network.biases[network.num_layers - 2][i];
-			float weighted_inputs = 0.0f;
+			float input_without_activation_function = 0.0f;
+			//this segment could be improved, by saving it on the feed forward process
 			for (int j = 0; j < network.layer_sizes[network.num_layers - 2]; j++)
 			{
-				weighted_inputs += network.weights[network.num_layers - 2][j][i] * network.activations[network.num_layers - 2][j];
+				input_without_activation_function += 
+					network.weights[network.num_layers - 2][j][i] * 
+					network.activations[network.num_layers - 2][j];
 			}
+			input_without_activation_function += bias;
 
-			float d_cost = cost_derivative(activation, expected);
-			float d_sigmoid = sigmoid_derivative(weighted_inputs);
-			float desired_change = d_cost * d_sigmoid;
-			//network.costs[network.num_layers - 1][i] = cost;
+			//cost derivative
+			float unhappiness = cost_derivative(activation, expected);
+			//activation function (sigmoid) derivative
+			float d_sigmoid = sigmoid_derivative(input_without_activation_function);
+
+			//add model to save this
+			float desired_change = unhappiness * d_sigmoid * activation * -1;
+
+			unhappiness_for_next_layer[i] = unhappiness * d_sigmoid;
 		}
+		backprop(network, output_idx-1, unhappiness_for_next_layer, network.layer_sizes[output_idx]);
+		delete[] unhappiness_for_next_layer;
 	}
 }
 
@@ -315,20 +329,24 @@ void backprop(n_network& network, int current_layer_idx, float* unhappiness_prev
 		return;
 	}
 
-	float* unhappiness = new float[network.layer_sizes[current_layer_idx]];
-
+	float* unhappiness_for_next_layer = new float[network.layer_sizes[current_layer_idx]];
+	
 	int prev_layer_idx = current_layer_idx - 1;
 	for (int i = 0; i < network.layer_sizes[current_layer_idx]; i++)
 	{
 		float activation = network.activations[current_layer_idx][i];
-		float desired_change = 0.0f;
+		float bias = network.biases[current_layer_idx][i];
+
+		float input_without_activation_function;
 		for (int j = 0; j < network.layer_sizes[prev_layer_idx]; j++)
 		{
-			desired_change += activation * unhappiness_prev[j];
+			input_without_activation_function += activation * unhappiness_prev[j];
 		}
-		unhappiness[i] = desired_change;
-		//1 is the derivative of the bias in the activation function a * w + b
-		float desired_b_change = 1 * unhappiness[i];
+		input_without_activation_function += bias;
+		
+		float d_sigmoid = sigmoid_derivative(input_without_activation_function);
+
+		float desired_change =  d_sigmoid * activation; // * previous * weight
 	}
 }
 
