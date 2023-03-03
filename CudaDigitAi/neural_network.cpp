@@ -34,6 +34,74 @@ inline float rand_between(float min, float max)
 	// Generate a random number within the given range
 	return distribution(engine);
 }
+//TODO write tests for this function
+nn_state& get_empty_state(n_network& network)
+{
+	nn_state state;
+
+	state.num_layers = network.num_layers;
+	state.layer_sizes = network.layer_sizes;
+
+	state.weights = new float** [state.num_layers - 1];
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		state.weights[i] = new float* [state.layer_sizes[i]];
+		for (int j = 0; j < state.layer_sizes[i]; j++)
+		{
+			state.weights[i][j] = new float[state.layer_sizes[i + 1]];
+		}
+	}
+
+	state.biases = new float* [state.num_layers - 1];
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		state.biases[i] = new float[state.layer_sizes[i + 1]];
+	}
+
+	clear_state(state);
+
+	return state;
+}
+void clear_state(nn_state& state)
+{
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		for (int j = 0; j < state.layer_sizes[i]; j++)
+		{
+			for (int k = 0; k < state.layer_sizes[i + 1]; k++)
+			{
+				state.weights[i][j][k] = 0.0f;
+			}
+		}
+	}
+
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		for (int j = 0; j < state.layer_sizes[i + 1]; j++)
+		{
+			state.biases[i][j] = 0.0f;
+		}
+	}
+}
+//TODO write tests for this function
+void delete_state(nn_state& state)
+{
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		for (int j = 0; j < state.layer_sizes[i]; j++)
+		{
+			delete[] state.weights[i][j];
+		}
+		delete[] state.weights[i];
+	}
+	delete[] state.weights;
+
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		delete[] state.biases[i];
+	}
+	delete[] state.biases;
+}
 
 void init_network(n_network& network)
 {
@@ -277,17 +345,56 @@ float test_nn(n_network& network, const digit_image_collection& training_data_co
 	}
 	return (float)correct_answers / (float)training_data_collection.size() * 100;
 }
+void backprop(n_network& network, int current_layer_idx, float* unhappiness_prev, int unhappiness_prev_size)
+{
+	if (current_layer_idx == 1)
+	{
+		return;
+	}
+
+	float* unhappiness_for_next_layer = new float[network.layer_sizes[current_layer_idx]];
+
+	int prev_layer_idx = current_layer_idx - 1;
+	for (int i = 0; i < network.layer_sizes[current_layer_idx]; i++)
+	{
+		float activation = network.activations[current_layer_idx][i];
+		float bias = network.biases[current_layer_idx][i];
+
+		float input_without_activation_function;
+		for (int j = 0; j < network.layer_sizes[prev_layer_idx]; j++)
+		{
+			input_without_activation_function += activation * unhappiness_prev[j];
+		}
+		input_without_activation_function += bias;
+
+		//REFACTOR !!! magic number only bc idk the formula why it should be there. this feels right
+		float magic_number = 0.0f;
+		for (int j = 0; j < unhappiness_prev_size; j++)
+		{
+			magic_number += unhappiness_prev[j] * network.weights[current_layer_idx][i][j];
+		}
+
+		float d_sigmoid = sigmoid_derivative(input_without_activation_function);
+
+		float desired_change = d_sigmoid * activation * magic_number; // * previous * weight
+	}
+}
+
 
 void train_on_images(n_network& network, digit_image_collection& training_data_collection, int num_epochs)
 {
 	int output_idx = network.num_layers - 1;
+
+	nn_state& desired_changes = get_empty_state(network);
 
 	for each (const digit_image& curr in training_data_collection)
 	{
 		set_input(network, curr);
 		feed_forward(network);
 
+		//could do this outside of the loop
 		float* unhappiness_for_next_layer = new float[network.layer_sizes[output_idx]];
+
 		for (int i = 0; i < network.layer_sizes[output_idx]; i++)
 		{
 			float activation = network.activations[output_idx][i];
@@ -319,37 +426,12 @@ void train_on_images(n_network& network, digit_image_collection& training_data_c
 		}
 		backprop(network, output_idx-1, unhappiness_for_next_layer, network.layer_sizes[output_idx]);
 		delete[] unhappiness_for_next_layer;
+
+		//the desired changes are set back to 0 after each image
+		clear_state(desired_changes);
 	}
+	delete_state(desired_changes);
 }
-
-void backprop(n_network& network, int current_layer_idx, float* unhappiness_prev, int unhappiness_prev_size)
-{
-	if (current_layer_idx == 0)
-	{
-		return;
-	}
-
-	float* unhappiness_for_next_layer = new float[network.layer_sizes[current_layer_idx]];
-	
-	int prev_layer_idx = current_layer_idx - 1;
-	for (int i = 0; i < network.layer_sizes[current_layer_idx]; i++)
-	{
-		float activation = network.activations[current_layer_idx][i];
-		float bias = network.biases[current_layer_idx][i];
-
-		float input_without_activation_function;
-		for (int j = 0; j < network.layer_sizes[prev_layer_idx]; j++)
-		{
-			input_without_activation_function += activation * unhappiness_prev[j];
-		}
-		input_without_activation_function += bias;
-		
-		float d_sigmoid = sigmoid_derivative(input_without_activation_function);
-
-		float desired_change =  d_sigmoid * activation; // * previous * weight
-	}
-}
-
 
 void print_weights(n_network& network)
 {
