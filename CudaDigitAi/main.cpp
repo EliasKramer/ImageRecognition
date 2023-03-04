@@ -1,5 +1,5 @@
 #include <iostream>
-#include "neural_network.h"
+#include "neural_network.hpp"
 #include <chrono>
 int main()
 {
@@ -23,24 +23,22 @@ int main()
 		<< "Reading files done. took : " 
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << std::endl;
 
-	apply_noise(network, 0.1f);
+	//apply_noise(network, 0.1f);
 	
-	std::cout << std::endl << "Testing network..." << std::endl;
-	float percent_correct = test_nn(network, testing_data_mnist);
-	std::cout << std::endl << "Testing done. Percent correct: " << percent_correct << "%" << std::endl;
 
-	/*
-	int count = 0;
-	for (digit_image& image : training_data_mnist)
-	{
-		print_digit_image(image);
-		if (count > 5)
-		{
-			break;
-		}
-		count++;
-	}*/
+	//training sublist with only one image
 
-	delete_network(network);
+	digit_image_collection_t training_data_mnist_sublist;
+	training_data_mnist_sublist.push_back(training_data_mnist[0]);
+	print_digit_image(training_data_mnist[0]);
+
+	test_nn_with_printing(network, training_data_mnist_sublist);
+
+	train_on_images(network, training_data_mnist_sublist, 1);
+	
+	//training on all images
+	test_nn_with_printing(network, training_data_mnist_sublist);
+
+	//delete_network(network);
 	return 0;
 }

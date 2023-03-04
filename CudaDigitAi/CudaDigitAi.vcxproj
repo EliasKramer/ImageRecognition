@@ -88,8 +88,8 @@
     <ClCompile Include="training_data.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="neural_network.h" />
-    <ClInclude Include="training_data.h" />
+    <ClInclude Include="neural_network.hpp" />
+    <ClInclude Include="training_data.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

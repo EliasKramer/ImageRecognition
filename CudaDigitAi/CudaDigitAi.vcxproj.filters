@@ -21,10 +21,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="neural_network.h">
+    <ClInclude Include="neural_network.hpp">
       <Filter>header</Filter>
     </ClInclude>
-    <ClInclude Include="training_data.h">
+    <ClInclude Include="training_data.hpp">
       <Filter>header</Filter>
     </ClInclude>
   </ItemGroup>

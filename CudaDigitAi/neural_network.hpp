@@ -5,7 +5,7 @@
 #include <iostream>
 #include <chrono>
 #include <random>
-#include "training_data.h"
+#include "training_data.hpp"
 
 typedef struct {
 	int num_layers;
@@ -43,8 +43,9 @@ void apply_noise(n_network_t& network, float noise_range);
 void print_output_data(n_network_t& network);
 std::string get_output_label(n_network_t& network);
 float get_cost(n_network_t& network);
-float test_nn(n_network_t& network, const digit_image_collection_t& training_data_collection);
 
+float test_nn(n_network_t& network, const digit_image_collection_t& training_data_collection);
+void test_nn_with_printing(n_network_t& network, const digit_image_collection_t& training_data_collection);
 
 void train_on_images(n_network_t& network, const digit_image_collection_t& training_data_collection, int num_epochs);
 

@@ -1,4 +1,4 @@
-#include "neural_network.h"
+#include "neural_network.hpp"
 
 // private functions
 inline float sigmoid(float x)
@@ -34,6 +34,7 @@ inline float rand_between(float min, float max)
 	// Generate a random number within the given range
 	return distribution(engine);
 }
+
 void clear_state(nn_state_t& state)
 {
 	for (int i = 0; i < state.num_layers - 1; i++)
@@ -58,30 +59,34 @@ void clear_state(nn_state_t& state)
 //TODO write tests for this function
 nn_state_t& get_empty_state(n_network_t& network)
 {
-	nn_state_t state;
+	nn_state_t* state = new nn_state_t;
 
-	state.num_layers = network.num_layers;
-	state.layer_sizes = network.layer_sizes;
-
-	state.weights = new float** [state.num_layers - 1];
-	for (int i = 0; i < state.num_layers - 1; i++)
+	state->num_layers = network.num_layers;
+	state->layer_sizes = new int[state->num_layers];
+	for (int i = 0; i < state->num_layers; i++)
 	{
-		state.weights[i] = new float* [state.layer_sizes[i]];
-		for (int j = 0; j < state.layer_sizes[i]; j++)
+		state->layer_sizes[i] = network.layer_sizes[i];
+	}
+
+	state->weights = new float** [state->num_layers - 1];
+	for (int i = 0; i < state->num_layers - 1; i++)
+	{
+		state->weights[i] = new float* [state->layer_sizes[i]];
+		for (int j = 0; j < state->layer_sizes[i]; j++)
 		{
-			state.weights[i][j] = new float[state.layer_sizes[i + 1]];
+			state->weights[i][j] = new float[state->layer_sizes[i + 1]];
 		}
 	}
 
-	state.biases = new float* [state.num_layers - 1];
-	for (int i = 0; i < state.num_layers - 1; i++)
+	state->biases = new float* [state->num_layers - 1];
+	for (int i = 0; i < state->num_layers - 1; i++)
 	{
-		state.biases[i] = new float[state.layer_sizes[i + 1]];
+		state->biases[i] = new float[state->layer_sizes[i + 1]];
 	}
 
-	clear_state(state);
+	clear_state(*state);
 
-	return state;
+	return *state;
 }
 
 //TODO write tests for this function
@@ -102,6 +107,8 @@ void delete_state(nn_state_t& state)
 		delete[] state.biases[i];
 	}
 	delete[] state.biases;
+	
+	delete[] state.layer_sizes;
 }
 
 void init_network(n_network_t& network)
@@ -346,48 +353,72 @@ float test_nn(n_network_t& network, const digit_image_collection_t& training_dat
 	}
 	return (float)correct_answers / (float)training_data_collection.size() * 100;
 }
-void backprop(n_network_t& network, int current_layer_idx, float* unhappiness_prev, int unhappiness_prev_size)
+void test_nn_with_printing(n_network_t& network, const digit_image_collection_t& training_data_collection)
 {
-	if (current_layer_idx == 1)
+	std::cout << std::endl << "Testing network..." << std::endl;
+	float percent_correct = test_nn(network, training_data_collection);
+	std::cout << std::endl << "Testing done. Percent correct: " << percent_correct << "%" << std::endl;
+}
+void backprop(
+	n_network_t& network, 
+	int current_layer_idx, 
+	float* unhappiness_before, 
+	int unhappiness_before_size,
+	nn_state_t& state)
+{
+	if (current_layer_idx == 0)
 	{
 		return;
 	}
 
+	//the unhappiness for the next layer is always as big as the current layer
 	float* unhappiness_for_next_layer = new float[network.layer_sizes[current_layer_idx]];
-
+	//the index of the layer that will be calculated after the current one
 	int prev_layer_idx = current_layer_idx - 1;
+
 	for (int i = 0; i < network.layer_sizes[current_layer_idx]; i++)
 	{
+		//the current activation
 		float activation = network.activations[current_layer_idx][i];
-		float bias = network.biases[current_layer_idx][i];
+		//the bias of the current node
+		float bias = network.biases[current_layer_idx-1][i];
 
-		float input_without_activation_function;
+		float input_without_activation_function = 0.0f;
 		for (int j = 0; j < network.layer_sizes[prev_layer_idx]; j++)
 		{
-			input_without_activation_function += activation * unhappiness_prev[j];
+			input_without_activation_function += 
+				network.activations[prev_layer_idx][j] * 
+				network.weights[prev_layer_idx][j][i];
 		}
 		input_without_activation_function += bias;
 
-		//REFACTOR !!! magic number only bc idk the formula why it should be there. this feels right
-		float magic_number = 0.0f;
-		for (int j = 0; j < unhappiness_prev_size; j++)
-		{
-			magic_number += unhappiness_prev[j] * network.weights[current_layer_idx][i][j];
-		}
-
 		float d_sigmoid = sigmoid_derivative(input_without_activation_function);
 
-		float desired_change = d_sigmoid * activation * magic_number; // * previous * weight
+		float weighted_unhappiness = 0.0f;
+		for (int j = 0; j < unhappiness_before_size; j++)
+		{
+			weighted_unhappiness += unhappiness_before[j] * network.weights[current_layer_idx][i][j];
+		}
+
+		for (int j = 0; j < network.layer_sizes[prev_layer_idx]; j++)
+		{
+			float desired_change = weighted_unhappiness * d_sigmoid * network.activations[prev_layer_idx][j];
+		}
+		float desired_change_bias = weighted_unhappiness * d_sigmoid;
+		
+		unhappiness_for_next_layer[i] = weighted_unhappiness * d_sigmoid * activation;
 	}
+	backprop(network, current_layer_idx - 1, unhappiness_for_next_layer, network.layer_sizes[current_layer_idx], state);
+
+	delete[] unhappiness_for_next_layer;
 }
 
-
-void train_on_images(n_network_t& network, digit_image_collection_t& training_data_collection, int num_epochs)
+void train_on_images(n_network_t& network, const digit_image_collection_t& training_data_collection, int num_epochs)
 {
 	int output_idx = network.num_layers - 1;
 
 	nn_state_t& desired_changes = get_empty_state(network);
-
+	
 	for each (const digit_image_t& curr in training_data_collection)
 	{
 		set_input(network, curr);
@@ -398,13 +429,17 @@ void train_on_images(n_network_t& network, digit_image_collection_t& training_da
 
 		for (int i = 0; i < network.layer_sizes[output_idx]; i++)
 		{
+			//current output node activation
 			float activation = network.activations[output_idx][i];
+			//the expected value for the current output node
 			float expected = 0.0f;
 			if (curr.label == std::to_string(i))
 			{
 				expected = 1.0f;
 			}
-			float bias = network.biases[network.num_layers - 2][i];
+			//the bias of the current output node 
+			float bias = network.biases[output_idx-1][i];
+			//recreating the input to the current output node without the activation function like sigmoid
 			float input_without_activation_function = 0.0f;
 			//this segment could be improved, by saving it on the feed forward process
 			for (int j = 0; j < network.layer_sizes[network.num_layers - 2]; j++)
@@ -420,13 +455,58 @@ void train_on_images(n_network_t& network, digit_image_collection_t& training_da
 			//activation function (sigmoid) derivative
 			float d_sigmoid = sigmoid_derivative(input_without_activation_function);
 
-			//add model to save this
-			float desired_change = unhappiness * d_sigmoid * activation * -1;
+			//add model to save this - im not sure about the
+			for (int j = 0; j < network.layer_sizes[network.num_layers - 2]; j++)
+			{
+				//this is how much the weight should change
+				float desired_weight_change = unhappiness * d_sigmoid * network.activations[network.num_layers - 2][j] * -1;
+			}
+			//this is how much the bias should change
+			float desired_bias_change = unhappiness * d_sigmoid * -1;
 
 			unhappiness_for_next_layer[i] = unhappiness * d_sigmoid;
-			backprop(network, output_idx - 1, unhappiness_for_next_layer, network.layer_sizes[output_idx]);
 		}
+		backprop(network, output_idx - 1, unhappiness_for_next_layer, network.layer_sizes[output_idx], desired_changes);
+
 		delete[] unhappiness_for_next_layer;
+
+		//print size of network
+		std::cout << "size of network: " << network.num_layers << " : " << std::endl;
+		for (int i = 0; i < network.num_layers; i++)
+		{
+			std::cout << network.layer_sizes[i] << " ";
+		}
+		//size of state
+		std::cout << "size of state: " << desired_changes.num_layers << " : " << std::endl;
+		for (int i = 0; i < desired_changes.num_layers; i++)
+		{
+			std::cout << desired_changes.layer_sizes[i] << " ";
+		}
+
+		//apply state
+		for (int i = 0; i < network.num_layers - 1; i++)
+		{
+			for (int j = 0; j < network.layer_sizes[i]; j++)
+			{
+				for (int k = 0; k < network.layer_sizes[i + 1]; k++)
+				{ 
+					//network.weights[i][k][j] += desired_changes.weights[i][j][k];
+				}
+				//network.biases[i][j] += desired_changes.biases[i][j];
+			}
+		}
+		for (int i = 0; i < network.num_layers - 1; i++)
+		{
+			for (int j = 0; j < network.layer_sizes[i]; j++)
+			{
+				for (int k = 0; k < network.layer_sizes[i + 1]; k++)
+				{
+					desired_changes.weights[i][j][k] = 0.0f;
+					//network.weights[i][j][k] = 0.0f;
+				}
+				network.biases[i][j] = 0.0f;
+			}
+		}
 
 		//the desired changes are set back to 0 after each image
 		clear_state(desired_changes);
