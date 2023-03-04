@@ -34,10 +34,31 @@ inline float rand_between(float min, float max)
 	// Generate a random number within the given range
 	return distribution(engine);
 }
-//TODO write tests for this function
-nn_state& get_empty_state(n_network& network)
+void clear_state(nn_state_t& state)
 {
-	nn_state state;
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		for (int j = 0; j < state.layer_sizes[i]; j++)
+		{
+			for (int k = 0; k < state.layer_sizes[i + 1]; k++)
+			{
+				state.weights[i][j][k] = 0.0f;
+			}
+		}
+	}
+
+	for (int i = 0; i < state.num_layers - 1; i++)
+	{
+		for (int j = 0; j < state.layer_sizes[i + 1]; j++)
+		{
+			state.biases[i][j] = 0.0f;
+		}
+	}
+}
+//TODO write tests for this function
+nn_state_t& get_empty_state(n_network_t& network)
+{
+	nn_state_t state;
 
 	state.num_layers = network.num_layers;
 	state.layer_sizes = network.layer_sizes;
@@ -62,29 +83,9 @@ nn_state& get_empty_state(n_network& network)
 
 	return state;
 }
-void clear_state(nn_state& state)
-{
-	for (int i = 0; i < state.num_layers - 1; i++)
-	{
-		for (int j = 0; j < state.layer_sizes[i]; j++)
-		{
-			for (int k = 0; k < state.layer_sizes[i + 1]; k++)
-			{
-				state.weights[i][j][k] = 0.0f;
-			}
-		}
-	}
 
-	for (int i = 0; i < state.num_layers - 1; i++)
-	{
-		for (int j = 0; j < state.layer_sizes[i + 1]; j++)
-		{
-			state.biases[i][j] = 0.0f;
-		}
-	}
-}
 //TODO write tests for this function
-void delete_state(nn_state& state)
+void delete_state(nn_state_t& state)
 {
 	for (int i = 0; i < state.num_layers - 1; i++)
 	{
@@ -103,7 +104,7 @@ void delete_state(nn_state& state)
 	delete[] state.biases;
 }
 
-void init_network(n_network& network)
+void init_network(n_network_t& network)
 {
 	//set activations to 0
 	for (int i = 0; i < network.num_layers; i++)
@@ -138,13 +139,13 @@ void init_network(n_network& network)
 
 //public functions
 
-n_network& create_network(
+n_network_t& create_network(
 	int input_size,
 	int num_of_hidden_layers,
 	int hidden_layer_size,
 	int num_of_output_layer)
 {
-	n_network* network = new n_network;
+	n_network_t* network = new n_network_t;
 
 	//size initialization and allocation
 	network->num_layers = num_of_hidden_layers + 2;
@@ -195,7 +196,7 @@ n_network& create_network(
 	return *network;
 }
 
-void delete_network(n_network& network)
+void delete_network(n_network_t& network)
 {
 	//delete activations
 	for (int i = 0; i < network.num_layers; i++)
@@ -232,7 +233,7 @@ void delete_network(n_network& network)
 	delete[] network.labels;
 }
 
-void set_input(n_network& network, const digit_image& training_data)
+void set_input(n_network_t& network, const digit_image_t& training_data)
 {
 	//can be removed for more performance
 
@@ -252,7 +253,7 @@ void set_input(n_network& network, const digit_image& training_data)
 	}
 }
 
-void feed_forward(n_network& network)
+void feed_forward(n_network_t& network)
 {
 	//this is the layer of the current activations we are setting
 	for (int layer_idx = 1; layer_idx < network.num_layers; layer_idx++)
@@ -273,7 +274,7 @@ void feed_forward(n_network& network)
 	}
 }
 
-void apply_noise(n_network& network, float noise_range)
+void apply_noise(n_network_t& network, float noise_range)
 {
 	//for weights
 	for (int i = 0; i < network.num_layers - 1; i++)
@@ -296,7 +297,7 @@ void apply_noise(n_network& network, float noise_range)
 	}
 }
 
-void print_output_data(n_network& network)
+void print_output_data(n_network_t& network)
 {
 	std::cout << std::endl << "-----------------------------" << std::endl;
 	for (int i = 0; i < network.layer_sizes[network.num_layers-1]; i++)
@@ -307,7 +308,7 @@ void print_output_data(n_network& network)
 	std::cout << "-----------------------------" << std::endl;
 }
 
-std::string get_output_label(n_network& network)
+std::string get_output_label(n_network_t& network)
 {
 	int output_idx = network.num_layers - 1;
 	//curr float is min float
@@ -324,16 +325,16 @@ std::string get_output_label(n_network& network)
 	return std::to_string(curr_max_idx);
 }
 
-float get_cost(n_network& network)
+float get_cost(n_network_t& network)
 {
 	return 0.0f;
 }
 
-float test_nn(n_network& network, const digit_image_collection& training_data_collection)
+float test_nn(n_network_t& network, const digit_image_collection_t& training_data_collection)
 {
 	//returns the percentage of correct answers
 	int correct_answers = 0;
-	for (const digit_image& curr : training_data_collection)
+	for (const digit_image_t& curr : training_data_collection)
 	{
 		set_input(network, curr);
 		feed_forward(network);
@@ -345,7 +346,7 @@ float test_nn(n_network& network, const digit_image_collection& training_data_co
 	}
 	return (float)correct_answers / (float)training_data_collection.size() * 100;
 }
-void backprop(n_network& network, int current_layer_idx, float* unhappiness_prev, int unhappiness_prev_size)
+void backprop(n_network_t& network, int current_layer_idx, float* unhappiness_prev, int unhappiness_prev_size)
 {
 	if (current_layer_idx == 1)
 	{
@@ -381,13 +382,13 @@ void backprop(n_network& network, int current_layer_idx, float* unhappiness_prev
 }
 
 
-void train_on_images(n_network& network, digit_image_collection& training_data_collection, int num_epochs)
+void train_on_images(n_network_t& network, digit_image_collection_t& training_data_collection, int num_epochs)
 {
 	int output_idx = network.num_layers - 1;
 
-	nn_state& desired_changes = get_empty_state(network);
+	nn_state_t& desired_changes = get_empty_state(network);
 
-	for each (const digit_image& curr in training_data_collection)
+	for each (const digit_image_t& curr in training_data_collection)
 	{
 		set_input(network, curr);
 		feed_forward(network);
@@ -423,8 +424,8 @@ void train_on_images(n_network& network, digit_image_collection& training_data_c
 			float desired_change = unhappiness * d_sigmoid * activation * -1;
 
 			unhappiness_for_next_layer[i] = unhappiness * d_sigmoid;
+			backprop(network, output_idx - 1, unhappiness_for_next_layer, network.layer_sizes[output_idx]);
 		}
-		backprop(network, output_idx-1, unhappiness_for_next_layer, network.layer_sizes[output_idx]);
 		delete[] unhappiness_for_next_layer;
 
 		//the desired changes are set back to 0 after each image
@@ -433,7 +434,7 @@ void train_on_images(n_network& network, digit_image_collection& training_data_c
 	delete_state(desired_changes);
 }
 
-void print_weights(n_network& network)
+void print_weights(n_network_t& network)
 {
 	for (int i = 0; i < network.num_layers - 1; i++)
 	{
@@ -450,7 +451,7 @@ void print_weights(n_network& network)
 	}
 }
 
-void print_biases(n_network& network)
+void print_biases(n_network_t& network)
 {
 	for (int i = 0; i < network.num_layers - 1; i++)
 	{

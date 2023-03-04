@@ -13,7 +13,7 @@ bool is_little_endian()
     int num = 1;
 	return (*(char*)&num == 1);
 }
-void print_digit_image(digit_image& data)
+void print_digit_image(digit_image_t& data)
 {
     //print the two dimensional float array of the image in the according colors
     std::cout << std::endl << "-------------------------------------" << std::endl;
@@ -41,8 +41,8 @@ void print_digit_image(digit_image& data)
 
 }
 
-digit_image_collection load_mnist_data(std::string data_file_path, std::string label_file_path) {
-    digit_image_collection mnist_data;
+digit_image_collection_t load_mnist_data(std::string data_file_path, std::string label_file_path) {
+    digit_image_collection_t mnist_data;
     
     //get the path where the program is executed
     std::filesystem::path path = std::filesystem::current_path();
@@ -115,7 +115,7 @@ digit_image_collection load_mnist_data(std::string data_file_path, std::string l
     char* label_buffer = new char[num_labels];
     label_file.read(label_buffer, num_labels);
 
-    digit_image current_image;
+    digit_image_t current_image;
 
     for (int i = 0; i < num_images; i++) {
         

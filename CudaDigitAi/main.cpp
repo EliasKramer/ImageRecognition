@@ -5,16 +5,16 @@ int main()
 {
 	std::cout << "Hello World!" << std::endl;
 	
-	n_network& network = create_network(28 * 28, 2, 16, 10);
+	n_network_t& network = create_network(28 * 28, 2, 16, 10);
 
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	std::cout << std::endl << "Reading files..." << std::endl;
-	digit_image_collection training_data_mnist = load_mnist_data(
+	digit_image_collection_t training_data_mnist = load_mnist_data(
 		"/data/train-images.idx3-ubyte",
 		"/data/train-labels.idx1-ubyte");
 
-	digit_image_collection testing_data_mnist = load_mnist_data(
+	digit_image_collection_t testing_data_mnist = load_mnist_data(
 		"/data/t10k-images.idx3-ubyte",
 		"/data/t10k-labels.idx1-ubyte");
 
