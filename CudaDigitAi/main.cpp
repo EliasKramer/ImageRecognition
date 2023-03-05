@@ -28,21 +28,19 @@ int main()
 
 	//training sublist with only one image
 
-	digit_image_collection_t training_data_mnist_sublist;
-	training_data_mnist_sublist.push_back(training_data_mnist[0]);
 	print_digit_image(training_data_mnist[0]);
 
-	test_nn_with_printing(network, training_data_mnist_sublist);
+	test_nn_with_printing(network, testing_data_mnist);
 	print_output_data(network);
 	print_biases(network);
 
-	apply_noise(network, 0.1f);
-	train_on_images(network, training_data_mnist_sublist, 1);
+	apply_noise(network, 1.0f);
+	train_on_images(network, testing_data_mnist, 100);
 	
 	//training on all images
-	test_nn_with_printing(network, training_data_mnist_sublist);
+	test_nn_with_printing(network, testing_data_mnist);
 	print_output_data(network);
-	print_biases(network);
+	//print_biases(network);
 
 	delete_network(network);
 	return 0;
