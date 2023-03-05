@@ -33,12 +33,17 @@ int main()
 	print_digit_image(training_data_mnist[0]);
 
 	test_nn_with_printing(network, training_data_mnist_sublist);
+	print_output_data(network);
+	print_biases(network);
 
+	apply_noise(network, 0.1f);
 	train_on_images(network, training_data_mnist_sublist, 1);
 	
 	//training on all images
 	test_nn_with_printing(network, training_data_mnist_sublist);
+	print_output_data(network);
+	print_biases(network);
 
-	//delete_network(network);
+	delete_network(network);
 	return 0;
 }
