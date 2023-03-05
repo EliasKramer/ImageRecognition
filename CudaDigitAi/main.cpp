@@ -34,12 +34,12 @@ int main()
 	print_output_data(network);
 	print_biases(network);
 
-	apply_noise(network, 1.0f);
-	train_on_images(network, testing_data_mnist, 100);
-	
-	//training on all images
+	apply_noise(network, 15.0f);
+	train_on_images(network, training_data_mnist, 500, 50);
 	test_nn_with_printing(network, testing_data_mnist);
-	print_output_data(network);
+
+	//training on all images
+	//print_output_data(network);
 	//print_biases(network);
 
 	delete_network(network);

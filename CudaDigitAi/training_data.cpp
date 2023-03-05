@@ -145,3 +145,51 @@ digit_image_collection_t load_mnist_data(std::string data_file_path, std::string
 
     return mnist_data;
 }
+
+batch_handler_t& get_new_batch_handler(const digit_image_collection_t& collection, int batch_size)
+{
+    if (batch_size <= 0)
+    {
+		std::cerr << "Batch size must be greater than 0" << std::endl;
+		exit(1);
+	}
+    if (collection.size() == 0)
+    {
+        std::cerr << "Batch handler cannot handle an empty collection" << std::endl;
+		exit(1);
+    }
+
+    batch_handler_t* handler = new batch_handler_t;
+    
+    handler->batch_size = batch_size;
+    handler->last_idx = 0;
+    handler->collection = &collection;
+
+    return *handler;
+}
+
+digit_image_collection_t get_batch(batch_handler_t& handler)
+{
+    digit_image_collection_t batch;
+    int start_idx = handler.last_idx;
+    int end_idx = start_idx + handler.batch_size;
+
+    //check if we reached the end of the collection
+    if (end_idx >= handler.collection->size())
+    {
+        //if the end is reached, we want to return to the start and start a sublist there
+        //this way we always get a sublist, that is the size of the batch size
+        start_idx = 0;
+        //min is for the edge case that the batch size is larger than the collection size
+        end_idx = std::min(handler.batch_size,(int)handler.collection->size()-1);
+	}
+
+    //sublist
+    batch.assign(
+        handler.collection->begin() + start_idx, 
+        handler.collection->begin() + end_idx);
+
+	handler.last_idx = end_idx;
+
+	return batch;
+}

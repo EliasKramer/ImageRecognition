@@ -432,36 +432,33 @@ void backprop(
 	delete[] unhappiness_for_next_layer;
 }
 
-void train_on_images(n_network_t& network, const digit_image_collection_t& training_data_collection, int num_epochs)
+void train_on_images(n_network_t& network, const digit_image_collection_t& training_data_collection, int num_epochs, int batch_size)
 {
 	int output_idx = network.num_layers - 1;
 	int left_idx = network.num_layers - 2;
 	
-	int training_batch_size = 100;
 	//nn_state_t& desired_changes = get_empty_state(network);
 
 	std::cout << "Training network..." << std::endl;
 
 	std::vector<nn_state_t> desired_changes;
-	for (int i = 0; i < training_batch_size; i++)
+	for (int i = 0; i < batch_size; i++)
 	{
 		desired_changes.push_back(get_empty_state(network));
 	}
 
+	batch_handler_t& batch_handler = get_new_batch_handler(training_data_collection, batch_size);
+
 	for (int epoch_idx = 0; epoch_idx < num_epochs; epoch_idx++)
 	{
-		//inclusive
-		//TODO make a function that returns new training batches
-		digit_image_collection_t::const_iterator first = training_data_collection.begin();
-		digit_image_collection_t::const_iterator last = training_data_collection.begin()+ training_batch_size;
-		digit_image_collection_t training_batch(first, last);
+		digit_image_collection_t training_batch = get_batch(batch_handler);
 
-		std::cout << "Epoch " << epoch_idx << " training batch size: " << training_batch.size() << std::endl;
+		//std::cout << "Epoch " << epoch_idx << "/" << num_epochs << std::endl;
 
 		int current_image_idx = 0;
 		for each (const digit_image_t & curr in training_batch)
 		{
-			std::cout << "image idx " << current_image_idx << std::endl;
+			//std::cout << "image idx " << current_image_idx << std::endl;
 			set_input(network, curr);
 			feed_forward(network);
 
@@ -514,7 +511,6 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 
 			current_image_idx++;
 		}
-		std::cout << "calculating average" << std::endl;
 		nn_state_t& sum_desired_changes = get_empty_state(network);
 		//calculate average
 		for (int i = 0; i < desired_changes.size(); i++)
@@ -531,7 +527,6 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				}
 			}
 		}
-		std::cout << "applying average" << std::endl;
 		//apply to network
 		for (int j = 1; j < network.num_layers; j++)
 		{
@@ -544,7 +539,6 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				set_bias(network, j, k, get_bias(network, j, k) - get_bias(sum_desired_changes, j, k) / desired_changes.size());
 			}
 		}
-		std::cout << "clearing" << std::endl;
 		for (int i = 0; i < desired_changes.size(); i++)
 		{
 			clear_state(desired_changes[i]);
