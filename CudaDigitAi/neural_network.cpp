@@ -44,6 +44,11 @@ inline float sigmoid(float x)
 	return 1.0f / (1.0f + exp(-x));
 }
 
+inline float reverse_sigmoid(float x)
+{
+	return log(x / (1.0f - x));
+}
+
 inline float cost(float actual, float expected)
 {
 	return (actual - expected) * (actual - expected);
@@ -399,6 +404,7 @@ void backprop(
 		//the bias of the current node
 		float bias = get_bias(network, current_layer_idx, i);
 
+		/*
 		float input_without_activation_function = 0.0f;
 		for (int j = 0; j < network.layer_sizes[left_idx]; j++)
 		{
@@ -407,7 +413,8 @@ void backprop(
 				get_weight(network, current_layer_idx, i, j);
 		}
 		input_without_activation_function += bias;
-
+		*/
+		float input_without_activation_function = reverse_sigmoid(activation);
 		float d_sigmoid = sigmoid_derivative(input_without_activation_function);
 
 		float weighted_unhappiness = 0.0f;
@@ -477,15 +484,18 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				//the bias of the current output node 
 				float bias = get_bias(network, output_idx, i);
 				//recreating the input to the current output node without the activation function like sigmoid
+				
+				/*
 				float input_without_activation_function = 0.0f;
-				//this segment could be improved, by saving it on the feed forward process
 				for (int j = 0; j < network.layer_sizes[left_idx]; j++)
 				{
 					input_without_activation_function +=
 						get_weight(network, output_idx, i, j) *
 						network.activations[left_idx][j];
 				}
-				input_without_activation_function += bias;
+				input_without_activation_function += bias;*/
+				
+				float input_without_activation_function = reverse_sigmoid(activation);
 
 				//cost derivative
 				float unhappiness = cost_derivative(activation, expected);

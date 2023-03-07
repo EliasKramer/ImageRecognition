@@ -5,7 +5,7 @@ int main()
 {
 	std::cout << "Hello World!" << std::endl;
 	
-	n_network_t& network = create_network(28 * 28, 2, 16, 10);
+	n_network_t& network = create_network(28 * 28, 2, 10, 10);
 
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
@@ -28,20 +28,14 @@ int main()
 
 	//training sublist with only one image
 
-	print_digit_image(training_data_mnist[0]);
-
 	test_nn_with_printing(network, testing_data_mnist);
-	print_output_data(network);
+
+	//apply_noise(network, 1.0f);
 	print_biases(network);
-
-	apply_noise(network, 15.0f);
-	train_on_images(network, training_data_mnist, 500, 50);
+	train_on_images(network, training_data_mnist, 1200, 80);
+	
 	test_nn_with_printing(network, testing_data_mnist);
-
-	//training on all images
-	//print_output_data(network);
-	//print_biases(network);
-
+	print_biases(network);
 	delete_network(network);
 	return 0;
 }

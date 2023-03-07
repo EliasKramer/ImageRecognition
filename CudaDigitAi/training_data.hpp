@@ -24,7 +24,7 @@ typedef struct {
     int last_idx;
 } batch_handler_t;
 
-void print_digit_image(digit_image_t& data);
+void print_digit_image(const digit_image_t& data);
 digit_image_collection_t load_mnist_data(std::string data_file_path, std::string label_file_path);
 
 batch_handler_t& get_new_batch_handler(const digit_image_collection_t& collection, int batch_size);

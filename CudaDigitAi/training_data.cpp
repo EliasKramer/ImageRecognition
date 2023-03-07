@@ -13,7 +13,7 @@ bool is_little_endian()
     int num = 1;
 	return (*(char*)&num == 1);
 }
-void print_digit_image(digit_image_t& data)
+void print_digit_image(const digit_image_t& data)
 {
     //print the two dimensional float array of the image in the according colors
     std::cout << std::endl << "-------------------------------------" << std::endl;
