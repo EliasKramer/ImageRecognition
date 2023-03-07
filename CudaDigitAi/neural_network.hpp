@@ -45,9 +45,13 @@ std::string get_output_label(n_network_t& network);
 float get_cost(n_network_t& network);
 
 float test_nn(n_network_t& network, const digit_image_collection_t& training_data_collection);
-void test_nn_with_printing(n_network_t& network, const digit_image_collection_t& training_data_collection);
+float test_nn_with_printing(n_network_t& network, const digit_image_collection_t& training_data_collection);
 
 void train_on_images(n_network_t& network, const digit_image_collection_t& training_data_collection, int num_epochs, int batch_size);
+
+bool saved_network_exists(std::string file_path);
+void save_network(n_network_t& network, std::string file_path);
+n_network_t& load_network(std::string file_path);
 
 void print_weights(n_network_t& network);
 void print_biases(n_network_t& network);	
