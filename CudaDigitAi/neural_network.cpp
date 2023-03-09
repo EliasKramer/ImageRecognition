@@ -215,7 +215,7 @@ void init_network(n_network_t& network)
 }
 
 //public functions
-n_network_t& create_network(
+n_network_t* create_network(
 	int input_size,
 	int num_of_hidden_layers,
 	int hidden_layer_size,
@@ -233,6 +233,14 @@ n_network_t& create_network(
 		network->layer_sizes[i] = hidden_layer_size;
 	}
 	network->layer_sizes[network->num_layers - 1] = num_of_output_layer;
+
+	//print size
+	std::cout << "Network size: ";
+	for (int i = 0; i < network->num_layers; i++)
+	{
+		std::cout << network->layer_sizes[i] << " ";
+	}
+	std::cout << std::endl;
 
 	//activation initialization and allocation
 	network->activations = new float* [network->num_layers];
@@ -269,7 +277,7 @@ n_network_t& create_network(
 
 	init_network(*network);
 
-	return *network;
+	return network;
 }
 
 void delete_network(n_network_t* network)
@@ -278,6 +286,14 @@ void delete_network(n_network_t* network)
 	{
 		return;
 	}
+
+	//print size
+	std::cout << "Network size: ";
+	for (int i = 0; i < network->num_layers; i++)
+	{
+		std::cout << network->layer_sizes[i] << " ";
+	}
+	std::cout << std::endl;
 
 	//delete activations
 	for (int i = 0; i < network->num_layers; i++)
@@ -307,7 +323,7 @@ void delete_network(n_network_t* network)
 	//delete labels
 	delete[] network->labels;
 
-	//delete network
+	//delete network - could cause issues
 	delete network;
 }
 
@@ -641,7 +657,7 @@ void save_network(n_network_t& network, std::string file_path)
 	out.close();
 }
 
-n_network_t& load_network(std::string file_path)
+n_network_t* load_network(std::string file_path)
 {
 	std::cout << "Loading network " << file_path << std::endl;
 
@@ -656,15 +672,23 @@ n_network_t& load_network(std::string file_path)
 	int* layer_sizes = new int[num_layers];
 	in.read(reinterpret_cast<char*>(layer_sizes), num_layers * sizeof(int));
 
+	//print the layer sizes
+	std::cout << "Layer sizes: ";
+	for (int i = 0; i < num_layers; i++)
+	{
+		std::cout << layer_sizes[i] << " ";
+	}
+	std::cout << std::endl;
+
 	//create a new neural network
 	//CAUTION this only works for networks with the same hidden layer sizes
-	n_network_t& retVal = create_network(layer_sizes[0], num_layers - 2, layer_sizes[1], layer_sizes[num_layers-1]);
+	n_network_t* retVal = create_network(layer_sizes[0], num_layers - 2, layer_sizes[1], layer_sizes[num_layers-1]);
 	delete[] layer_sizes;
 
 	//create buffer. this way we dont have to call read that often, which is very costly
-	int weight_buffer_size = get_num_weights(retVal);
+	int weight_buffer_size = get_num_weights(*retVal);
 	float* read_buffer_weight = new float[weight_buffer_size];
-	int bias_buffer_size = get_num_biases(retVal);
+	int bias_buffer_size = get_num_biases(*retVal);
 	float* read_buffer_bias = new float[bias_buffer_size];
 
 	//read the data from the file
@@ -672,15 +696,15 @@ n_network_t& load_network(std::string file_path)
 	in.read(reinterpret_cast<char*>(read_buffer_bias), bias_buffer_size * sizeof(float));
 
 	//fill the buffer with the read data
-	for (int i = 1; i < retVal.num_layers; i++)
+	for (int i = 1; i < retVal->num_layers; i++)
 	{
-		for (int j = 0; j < retVal.layer_sizes[i]; j++)
+		for (int j = 0; j < retVal->layer_sizes[i]; j++)
 		{
-			for (int k = 0; k < retVal.layer_sizes[i - 1]; k++)
+			for (int k = 0; k < retVal->layer_sizes[i - 1]; k++)
 			{
-				set_weight(retVal, i, j, k, read_buffer_weight[get_weight_index(retVal, i, j, k)]);
+				set_weight(*retVal, i, j, k, read_buffer_weight[get_weight_index(*retVal, i, j, k)]);
 			}
-			set_bias(retVal, i, j, read_buffer_bias[get_bias_index(retVal, i, j)]);
+			set_bias(*retVal, i, j, read_buffer_bias[get_bias_index(*retVal, i, j)]);
 		}
 	}
 

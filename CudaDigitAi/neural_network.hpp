@@ -34,7 +34,7 @@ typedef struct {
 	float** biases;
 } nn_state_t;
 
-n_network_t& create_network(int input_size, int num_of_hidden_layers, int hidden_layer_size, int num_of_output_layer);
+n_network_t* create_network(int input_size, int num_of_hidden_layers, int hidden_layer_size, int num_of_output_layer);
 void delete_network(n_network_t* network);
 
 void set_input(n_network_t& network, const digit_image_t& training_data);
@@ -51,7 +51,7 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 
 bool saved_network_exists(std::string file_path);
 void save_network(n_network_t& network, std::string file_path);
-n_network_t& load_network(std::string file_path);
+n_network_t* load_network(std::string file_path);
 
 void print_weights(n_network_t& network);
 void print_biases(n_network_t& network);	
