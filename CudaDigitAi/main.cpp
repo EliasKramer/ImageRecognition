@@ -32,16 +32,16 @@ int main()
 	}
 	else {
 		std::cout << "generating new network" << std::endl;
-		network = create_network(28 * 28, 2, 2, 10);
+		network = create_network(28 * 28, 2, 25, 10);
 		std::cout << "applying noise " << std::endl;
 		apply_noise(*network, 0.1f);
 	}
 
 	float current_best = test_nn(*network, testing_data_mnist);
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 1000; i++)
 	{
-		train_on_images(*network, training_data_mnist, 1000, 50);
+		train_on_images(*network, training_data_mnist, 1000, 60);
 		float current = test_nn_with_printing(*network, testing_data_mnist);
 		if (current > current_best)
 		{
