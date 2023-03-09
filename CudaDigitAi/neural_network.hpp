@@ -9,32 +9,31 @@
 #include "training_data.hpp"
 
 typedef struct {
-	int num_layers;
-	int* layer_sizes;
+	//the index is the sum all previous layers nodes
+	//this helps giving each element in a 1d array an index
 	int* index_helper;
 	float* weights;
 	float* biases;
 } nn_state_t;
 
 typedef struct {
+	int num_layers;
+	int* layer_sizes;
+
 	float* activations;
 	
 	nn_state_t state;
 	
-	std::vector<std::string> output_labels;
+	std::string* output_labels;
 } n_network_t;
 
-float get_activation_idx(int* index_helper, int curr_layer, int curr_neuron);
-int get_bias_idx(int* index_helper, int curr_layer, int curr_neuron);
-int get_weight_idx(int* index_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron);
 
-/*
 n_network_t* create_network(
 	int input_size, 
 	std::vector<int>& hidden_layer_sizes, 
 	std::vector<std::string>& output_labels);
 void delete_network(n_network_t* network);
-
+/*
 void set_input(n_network_t& network, const digit_image_t& training_data);
 void feed_forward(n_network_t& network);
 void apply_noise(n_network_t& network, float noise_range);

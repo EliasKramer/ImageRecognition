@@ -1,29 +1,69 @@
 #include "neural_network.hpp"
 
-float get_activation_idx(int* index_helper, int curr_layer, int curr_neuron)
+static inline float get_activation_idx(int* index_helper, int curr_layer, int curr_neuron)
 {
 	return index_helper[curr_layer] + curr_neuron;
 }
-int get_bias_idx(int* index_helper, int curr_layer, int curr_neuron)
+static inline int get_bias_idx(int* index_helper, int curr_layer, int curr_neuron)
 {
-	return get_activation_idx(index_helper, curr_layer-1, curr_neuron);
+	return get_activation_idx(index_helper, curr_layer - 1, curr_neuron);
 }
-int get_weight_idx(int* index_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron)
+static inline int get_weight_idx(int* index_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron)
 {
 	return get_activation_idx(index_helper, curr_layer - 1, curr_neuron) * layer_sizes[curr_layer - 1] + left_neuron;
 }
-/*n_network_t* create_network(int input_size, std::vector<int>& hidden_layer_sizes, std::vector<std::string>& output_labels)
+n_network_t* create_network(int input_size, std::vector<int>& hidden_layer_sizes, std::vector<std::string>& output_labels)
 {
-	//create the network
-	n_network_t* retVal = new n_network_t;
+	n_network_t* network = new n_network_t();
 
+	//create output labels
+	network->output_labels = new std::string[output_labels.size()];
+	for (int i = 0; i < output_labels.size(); i++)
+	{
+		network->output_labels[i] = output_labels[i];
+	}
 
-	return nullptr;
+	//create size of each layer
+	network->num_layers = hidden_layer_sizes.size() + 2;
+	network->layer_sizes = new int[network->num_layers];
+	network->layer_sizes[0] = input_size;
+	for (int i = 1; i < hidden_layer_sizes.size() - 1; i++)
+	{
+		network->layer_sizes[i] = hidden_layer_sizes[i];
+	}
+	network->layer_sizes[hidden_layer_sizes.size() - 1] = output_labels.size();
+
+	//create index helper
+	network->state.index_helper = new int[network->num_layers];
+	network->state.index_helper[0] = 0;
+	int temp = 0;
+	for (int i = 1; i < network->num_layers; i++)
+	{
+		temp += network->layer_sizes[i - 1];
+		network->state.index_helper[i] = temp;
+	}
+
+	//sum all nodes
+	int total_nodes = 0;
+	for (int i = 0; i < network->num_layers; i++)
+	{
+		total_nodes += network->layer_sizes[i];
+	}
+
+	//create activations
+	network->activations = new float[total_nodes];
+	//create biases (first layer has no biases)
+	network->state.biases = new float[total_nodes - network->layer_sizes[0]];
+	
+	//create weights
+	//TODO
+
+	return network;
 }
 
 void delete_network(n_network_t* network)
 {
-}*/
+}
 
 /*
 #include "neural_network.hpp"
