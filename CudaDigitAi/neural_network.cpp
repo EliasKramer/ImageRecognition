@@ -1,5 +1,33 @@
 #include "neural_network.hpp"
 
+float get_activation_idx(int* index_helper, int curr_layer, int curr_neuron)
+{
+	return index_helper[curr_layer] + curr_neuron;
+}
+int get_bias_idx(int* index_helper, int curr_layer, int curr_neuron)
+{
+	return get_activation_idx(index_helper, curr_layer-1, curr_neuron);
+}
+int get_weight_idx(int* index_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron)
+{
+	return get_activation_idx(index_helper, curr_layer - 1, curr_neuron) * layer_sizes[curr_layer - 1] + left_neuron;
+}
+/*n_network_t* create_network(int input_size, std::vector<int>& hidden_layer_sizes, std::vector<std::string>& output_labels)
+{
+	//create the network
+	n_network_t* retVal = new n_network_t;
+
+
+	return nullptr;
+}
+
+void delete_network(n_network_t* network)
+{
+}*/
+
+/*
+#include "neural_network.hpp"
+
 inline float get_weight(n_network_t& network, int curr_layer, int curr_neuron, int left_neuron)
 {
 	return network.weights[curr_layer - 1][curr_neuron][left_neuron];
@@ -17,7 +45,7 @@ inline void set_weight(nn_state_t& state, int curr_layer, int curr_neuron, int l
 {
 	state.weights[curr_layer - 1][curr_neuron][left_neuron] = value;
 }
-//the bias can now be accessed by using the layer index. 
+//the bias can now be accessed by using the layer index.
 //the first layer that has a bias is the second layer, which has the index 1
 //before you had to use index 0 for the second layer, since there is no bias for the input layer
 inline float get_bias(const n_network_t& network, int layer, int neuron)
@@ -258,7 +286,7 @@ n_network_t* create_network(
 	{
 		network->weights[i - 1] = new float* [network->layer_sizes[i]];
 
-		//iterate over the current layer nodes 
+		//iterate over the current layer nodes
 		//and allocate a new array of weights for each node on the next layer
 		for (int j = 0; j < network->layer_sizes[i]; j++)
 		{
@@ -278,6 +306,11 @@ n_network_t* create_network(
 	init_network(*network);
 
 	return network;
+}
+
+n_network_t* create_network(int input_size, std::vector<int>& hidden_layer_sizes, std::vector<std::string>& output_labels)
+{
+	return nullptr;
 }
 
 void delete_network(n_network_t* network)
@@ -496,7 +529,7 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 {
 	int output_idx = network.num_layers - 1;
 	int left_idx = network.num_layers - 2;
-	
+
 	//nn_state_t& desired_changes = get_empty_state(network);
 
 	std::cout << "Training network..." << std::endl;
@@ -534,9 +567,9 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				{
 					expected = 1.0f;
 				}
-				//the bias of the current output node 
+				//the bias of the current output node
 				float bias = get_bias(network, output_idx, i);
-				
+
 				//cost derivative
 				float input_without_activation_function = logit(activation);
 
@@ -625,7 +658,7 @@ void save_network(n_network_t& network, std::string file_path)
 
 	//write layer sizes
 	out.write(reinterpret_cast<char*>(network.layer_sizes), sizeof(int) * network.num_layers);
-	
+
 	//create buffer. this way we dont have to call write that often, which is very costly
 	int weight_buffer_size = get_num_weights(network);
 	float* write_buffer_weight = new float[weight_buffer_size];
@@ -667,7 +700,7 @@ n_network_t* load_network(std::string file_path)
 	//read how many layers there are
 	int num_layers;
 	in.read(reinterpret_cast<char*>(&num_layers), sizeof(int));
-	
+
 	//read the sizes of the layers
 	int* layer_sizes = new int[num_layers];
 	in.read(reinterpret_cast<char*>(layer_sizes), num_layers * sizeof(int));
@@ -723,7 +756,7 @@ void print_weights(n_network_t& network)
 	for (int i = 1; i < network.num_layers; i++)
 	{
 		std::cout << "Layer " << i << " weight at 0 0: " << std::endl;
-		
+
 		std::cout << get_weight(network, i, 0, 0) << std::endl;
 		/*for (int j = 0; j < network.layer_sizes[i]; j++)
 		{
@@ -733,7 +766,7 @@ void print_weights(n_network_t& network)
 			}
 			std::cout << std::endl;
 		}
-		std::cout << std::endl;*/
+		std::cout << std::endl;
 	}
 }
 
@@ -750,3 +783,4 @@ void print_biases(n_network_t& network)
 		std::cout << std::endl;
 	}
 }
+*/

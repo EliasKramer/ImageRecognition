@@ -4,7 +4,7 @@
 int main()
 {
 	std::cout << "Hello World!" << std::endl;
-
+	/*
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	std::cout << std::endl << "Reading files..." << std::endl;
@@ -22,9 +22,25 @@ int main()
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << std::endl;
 
 	std::cout << std::endl << "Creating network..." << std::endl << std::endl;
+	*/
+	//n_network_t *network;
+	int* layer_sizes = new int[3]{ 5, 3, 10 };
+	int* index_helper = new int[3]{ 0, 5, 5 + 3 };
 
-	n_network_t *network;
-
+	for (int i = 1; i < 4; i++)
+	{
+		for (int j = 0; j < layer_sizes[i]; j++)
+		{
+			for (int k = 0; k < layer_sizes[i - 1]; k++)
+			{
+				std::cout << "layer: " << i << " node: " << j << " left node: " << k << " idx: "
+					<< get_weight_idx(index_helper, layer_sizes, i, j, k) << std::endl;
+			}
+			std::cout << "layer: " << i << " node: " << j << " bias idx: "
+				<< get_bias_idx(index_helper, i, j) << std::endl;
+		}
+	}
+	/*
 	if (saved_network_exists("network"))
 	{
 		std::cout << "loading existing network..." << std::endl;
@@ -53,5 +69,6 @@ int main()
 	}
 
 	delete_network(network);
+	*/
 	return 0;
 }
