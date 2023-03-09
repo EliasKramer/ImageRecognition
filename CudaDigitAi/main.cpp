@@ -3,6 +3,7 @@
 #include <chrono>
 int main()
 {
+	/*
 	std::cout << "Hello World!" << std::endl;
 
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -22,8 +23,7 @@ int main()
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << std::endl;
 
 	std::cout << std::endl << "Creating network..." << std::endl << std::endl;
-	n_network_t network;
-
+	
 	if (saved_network_exists("network"))
 	{
 		std::cout << "loading existing network..." << std::endl;
@@ -31,14 +31,14 @@ int main()
 	}
 	else {
 		std::cout << "generating new network" << std::endl;
-		network = create_network(28 * 28, 2, 10, 10);
+		network = create_network(28 * 28, 2, 2, 10);
 		std::cout << "applying noise " << std::endl;
 		apply_noise(network, 0.1f);
 	}
 
 	float current_best = test_nn(network, testing_data_mnist);
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		train_on_images(network, training_data_mnist, 1000, 50);
 		float current = test_nn_with_printing(network, testing_data_mnist);
@@ -50,7 +50,9 @@ int main()
 		}
 		std::cout << "current best is " << current_best << std::endl;
 	}
+	*/	
+	n_network_t& network = create_network(28 * 28, 2, 3, 10);
 
-	delete_network(network);
+	delete_network(&network);
 	return 0;
 }

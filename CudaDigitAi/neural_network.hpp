@@ -35,7 +35,7 @@ typedef struct {
 } nn_state_t;
 
 n_network_t& create_network(int input_size, int num_of_hidden_layers, int hidden_layer_size, int num_of_output_layer);
-void delete_network(n_network_t& network);
+void delete_network(n_network_t* network);
 
 void set_input(n_network_t& network, const digit_image_t& training_data);
 void feed_forward(n_network_t& network);

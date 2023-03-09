@@ -245,9 +245,10 @@ n_network_t& create_network(
 	network->weights = new float** [network->num_layers - 1];
 	network->biases = new float* [network->num_layers - 1];
 
+	//iterate over layers
 	for (int i = 1; i < network->num_layers; i++)
 	{
-		network->weights[i - 1] = new float* [network->layer_sizes[i - 1]];
+		network->weights[i - 1] = new float* [network->layer_sizes[i]];
 
 		//iterate over the current layer nodes 
 		//and allocate a new array of weights for each node on the next layer
@@ -256,7 +257,7 @@ n_network_t& create_network(
 			network->weights[i - 1][j] = new float[network->layer_sizes[i - 1]];
 		}
 
-		network->biases[i - 1] = new float[network->layer_sizes[i - 1]];
+		network->biases[i - 1] = new float[network->layer_sizes[i]];
 	}
 
 	//init labels
@@ -271,44 +272,43 @@ n_network_t& create_network(
 	return *network;
 }
 
-void delete_network(n_network_t& network)
+void delete_network(n_network_t* network)
 {
-	//delete activations
-	for (int i = 0; i < network.num_layers; i++)
+	if (network == nullptr)
 	{
-		delete[] network.activations[i];
+		return;
 	}
-	delete[] network.activations;
 
-	//iterate over all layers
-	for (int i = 1; i < network.num_layers; i++)
+	//delete activations
+	for (int i = 0; i < network->num_layers; i++)
 	{
-		//iterate over each node
-		for (int j = 0; j < network.layer_sizes[i]; j++)
-		{
-			//delete array for current node, 
-			//that has an array to the next layer nodes
-			delete[] network.weights[i - 1][j];
-		}
-		//delete current layer of weights
-		delete[] network.weights[i - 1];
+		delete[] network->activations[i];
+	}
+	delete[] network->activations;
 
-		//delete current layer of biases
-		delete[] network.biases[i - 1];
+	for (int i = 1; i < network->num_layers; i++)
+	{
+		for (int j = 0; j < network->layer_sizes[i]; j++)
+		{
+			delete[] network->weights[i - 1][j];
+		}
+		delete[] network->weights[i - 1];
+
+		delete[] network->biases[i-1];
 	}
 
 	//delete weights and biases arrays
-	delete[] network.weights;
-	delete[] network.biases;
+	delete[] network->weights;
+	delete[] network->biases;
 
 	//delete layer sizes
-	delete[] network.layer_sizes;
+	delete[] network->layer_sizes;
 
 	//delete labels
-	delete[] network.labels;
+	delete[] network->labels;
 
 	//delete network
-	//delete& network;
+	delete network;
 }
 
 void set_input(n_network_t& network, const digit_image_t& training_data)
