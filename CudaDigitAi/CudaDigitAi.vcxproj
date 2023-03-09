@@ -80,6 +80,7 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="dot_product.cu" />
     <CudaCompile Include="kernel.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +89,7 @@
     <ClCompile Include="training_data.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dot_product.hpp" />
     <ClInclude Include="neural_network.hpp" />
     <ClInclude Include="training_data.hpp" />
   </ItemGroup>

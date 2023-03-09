@@ -32,7 +32,7 @@ int main()
 	}
 	else {
 		std::cout << "generating new network" << std::endl;
-		network = create_network(28 * 28, 2, 25, 10);
+		network = create_network(28 * 28, 1, 1, 10);
 		std::cout << "applying noise " << std::endl;
 		apply_noise(*network, 0.1f);
 	}

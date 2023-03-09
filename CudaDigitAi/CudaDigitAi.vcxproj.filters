@@ -2,6 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="dot_product.cu">
+      <Filter>cuda</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -19,6 +22,9 @@
     <Filter Include="cpp_files">
       <UniqueIdentifier>{03e28230-87ec-4e4a-a0c6-a7c2cbe3c356}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cuda">
+      <UniqueIdentifier>{ba00910d-56bf-4724-89ea-a8ecc5c79b63}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="neural_network.hpp">
@@ -26,6 +32,9 @@
     </ClInclude>
     <ClInclude Include="training_data.hpp">
       <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="dot_product.hpp">
+      <Filter>cuda</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
