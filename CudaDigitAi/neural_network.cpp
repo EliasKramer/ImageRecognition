@@ -1,18 +1,72 @@
 #include "neural_network.hpp"
+inline float sigmoid(float x)
+{
+	return 1.0f / (1.0f + exp(-x));
+}
+//reverse sigmoid
+inline float logit(float x)
+{
+	return log(x / (1.0f - x));
+}
 
-static inline float get_activation_idx(int* index_helper, int curr_layer, int curr_neuron)
+inline float cost(float actual, float expected)
 {
-	return index_helper[curr_layer] + curr_neuron;
+	return (actual - expected) * (actual - expected);
 }
-static inline int get_bias_idx(int* index_helper, int curr_layer, int curr_neuron)
+
+inline float sigmoid_derivative(float x)
 {
-	return get_activation_idx(index_helper, curr_layer - 1, curr_neuron);
+	float sigmoid_activation = sigmoid(x);
+	return sigmoid_activation * (1.0f - sigmoid_activation);
 }
-static inline int get_weight_idx(int* index_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron)
+
+inline float cost_derivative(float actual, float expected)
 {
-	return get_activation_idx(index_helper, curr_layer - 1, curr_neuron) * layer_sizes[curr_layer - 1] + left_neuron;
+	return 2.0f * (actual - expected);
 }
-n_network_t* create_network(int input_size, std::vector<int>& hidden_layer_sizes, std::vector<std::string>& output_labels)
+
+inline float rand_between(float min, float max)
+{
+	// Get the current time as a seed
+	auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+
+	// Create a random engine and distribution
+	std::default_random_engine engine(seed);
+	std::uniform_real_distribution<float> distribution(min, max);
+
+	// Generate a random number within the given range
+	return distribution(engine);
+}
+
+static inline int get_activation_idx(int* activation_idx_helper, int curr_layer, int curr_neuron)
+{
+	return activation_idx_helper[curr_layer] + curr_neuron;
+}
+static inline int get_bias_idx(int* bias_idx_helper, int curr_layer, int curr_neuron)
+{
+	return bias_idx_helper[curr_layer - 1] + curr_neuron;
+}
+static inline int get_weight_idx(int* activation_idx_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron)
+{
+	return get_activation_idx(activation_idx_helper, curr_layer - 1, curr_neuron) * layer_sizes[curr_layer - 1] + left_neuron;
+}
+
+void init_state(nn_state_t& state)
+{
+	for (int i = 0; i < state.total_biases; i++)
+	{
+		state.biases[i] = 0.0f;
+	}
+	for (int i = 0; i < state.total_weights; i++)
+	{
+		state.weights[i] = 0.0f;
+	}
+}
+
+n_network_t* create_network(
+	int input_size,
+	std::vector<int>& hidden_layer_sizes,
+	std::vector<std::string>& output_labels)
 {
 	n_network_t* network = new n_network_t();
 
@@ -27,20 +81,30 @@ n_network_t* create_network(int input_size, std::vector<int>& hidden_layer_sizes
 	network->num_layers = hidden_layer_sizes.size() + 2;
 	network->layer_sizes = new int[network->num_layers];
 	network->layer_sizes[0] = input_size;
-	for (int i = 1; i < hidden_layer_sizes.size() - 1; i++)
+	for (int i = 0; i < hidden_layer_sizes.size(); i++)
 	{
-		network->layer_sizes[i] = hidden_layer_sizes[i];
+		network->layer_sizes[i + 1] = hidden_layer_sizes[i];
 	}
-	network->layer_sizes[hidden_layer_sizes.size() - 1] = output_labels.size();
+	network->layer_sizes[network->num_layers - 1] = output_labels.size();
 
-	//create index helper
-	network->state.index_helper = new int[network->num_layers];
-	network->state.index_helper[0] = 0;
+	//create activation index helper
+	network->state.activation_idx_helper = new int[network->num_layers];
+	network->state.activation_idx_helper[0] = 0;
 	int temp = 0;
 	for (int i = 1; i < network->num_layers; i++)
 	{
 		temp += network->layer_sizes[i - 1];
-		network->state.index_helper[i] = temp;
+		network->state.activation_idx_helper[i] = temp;
+	}
+
+	//create bias index helper
+	network->state.bias_idx_helper = new int[network->num_layers - 1];
+	network->state.bias_idx_helper[0] = 0;
+	temp = 0;
+	for (int i = 1; i < network->num_layers - 1; i++)
+	{
+		temp += network->layer_sizes[i];
+		network->state.bias_idx_helper[i] = temp;
 	}
 
 	//sum all nodes
@@ -49,20 +113,215 @@ n_network_t* create_network(int input_size, std::vector<int>& hidden_layer_sizes
 	{
 		total_nodes += network->layer_sizes[i];
 	}
+	network->state.total_nodes = total_nodes;
 
 	//create activations
 	network->activations = new float[total_nodes];
 	//create biases (first layer has no biases)
-	network->state.biases = new float[total_nodes - network->layer_sizes[0]];
-	
+	network->state.total_biases = total_nodes - network->layer_sizes[0];
+	network->state.biases = new float[network->state.total_biases];
+
 	//create weights
-	//TODO
+	int total_weights = 0;
+	for (int i = 1; i < network->num_layers; i++)
+	{
+		total_weights += network->layer_sizes[i] * network->layer_sizes[i - 1];
+	}
+	network->state.total_weights = total_weights;
+	network->state.weights = new float[network->state.total_weights];
+
+	init_state(network->state);
 
 	return network;
 }
 
 void delete_network(n_network_t* network)
 {
+	delete[] network->output_labels;
+	delete[] network->layer_sizes;
+	delete[] network->activations;
+	delete[] network->state.activation_idx_helper;
+	delete[] network->state.bias_idx_helper;
+	delete[] network->state.biases;
+	delete[] network->state.weights;
+	delete network;
+}
+
+void set_input(n_network_t& network, const digit_image_t& training_data)
+{
+	//can be removed for more performance
+
+	if (network.layer_sizes[0] != (IMAGE_SIZE_X * IMAGE_SIZE_Y))
+	{
+		std::cerr << "Error: input size does not match network input size";
+		exit(1);
+	}
+
+	for (int y = 0; y < IMAGE_SIZE_Y; y++)
+	{
+		for (int x = 0; x < IMAGE_SIZE_X; x++)
+		{
+			int idx = y * IMAGE_SIZE_X + x;
+			network.activations[get_activation_idx(network.state.activation_idx_helper, 0, idx)] =
+				training_data.matrix[x][y];
+		}
+	}
+}
+
+void feed_forward(n_network_t& network)
+{
+	for (int curr_layer = 1; curr_layer < network.num_layers; curr_layer++)
+	{
+		for (int curr_neuron = 0; curr_neuron < network.layer_sizes[curr_layer]; curr_neuron++)
+		{
+			float sum = 0;
+			for (int left_neuron = 0; left_neuron < network.layer_sizes[curr_layer - 1]; left_neuron++)
+			{
+				sum +=
+					network.activations[
+						get_activation_idx(
+							network.state.activation_idx_helper,
+							curr_layer - 1,
+							left_neuron)] *
+					network.state.weights[
+						get_weight_idx(
+							network.state.activation_idx_helper,
+							network.layer_sizes,
+							curr_layer,
+							curr_neuron,
+							left_neuron)];
+			}
+			sum += network.state.biases[
+				get_bias_idx(network.state.bias_idx_helper, curr_layer, curr_neuron)];
+			network.activations[
+				get_activation_idx(network.state.activation_idx_helper, curr_layer, curr_neuron)] = sigmoid(sum);
+		}
+	}
+}
+
+void apply_noise(n_network_t& network, float noise_range)
+{
+	for (int i = 0; i < network.state.total_weights; i++)
+	{
+		network.state.weights[i] += rand_between(-noise_range, noise_range);
+	}
+	for (int i = 0; i < network.state.total_biases; i++)
+	{
+		network.state.biases[i] += rand_between(-noise_range, noise_range);
+	}
+}
+
+void print_output_data(n_network_t& network)
+{
+	for (int i = 0; i < network.layer_sizes[network.num_layers - 1]; i++)
+	{
+		std::cout
+			<< network.output_labels[i] << ": "
+			<< network.activations[get_activation_idx(network.state.activation_idx_helper, network.num_layers - 1, i)]
+			<< std::endl;
+	}
+}
+
+std::string get_output_label(n_network_t& network)
+{
+	float max = 0;
+	int max_idx = 0;
+	for (int i = 0; i < network.layer_sizes[network.num_layers - 1]; i++)
+	{
+		float curr = network.activations[get_activation_idx(network.state.activation_idx_helper, network.num_layers - 1, i)];
+		if (curr > max)
+		{
+			max = curr;
+			max_idx = i;
+		}
+	}
+	return network.output_labels[max_idx];
+
+}
+
+float test_nn(n_network_t& network, const digit_image_collection_t& training_data_collection)
+{
+	return 0.0f;
+}
+
+float test_nn_with_printing(n_network_t& network, const digit_image_collection_t& training_data_collection)
+{
+	return 0.0f;
+}
+
+void train_on_images(n_network_t& network, const digit_image_collection_t& training_data_collection, int num_epochs, int batch_size)
+{
+}
+
+bool saved_network_exists(std::string file_path)
+{
+	return false;
+}
+
+void save_network(n_network_t& network, std::string file_path)
+{
+}
+
+n_network_t* load_network(std::string file_path)
+{
+	return nullptr;
+}
+
+void print_weights(n_network_t& network)
+{
+	std::cout 
+		<< "------------------------\n"
+		<< "Weights:\n"
+		<< "------------------------\n";
+
+	for (int curr_layer = 1; curr_layer < network.num_layers; curr_layer++)
+	{
+		std::cout << "Layer " << curr_layer << std::endl;
+		for (int curr_neuron = 0; curr_neuron < network.layer_sizes[curr_layer]; curr_neuron++)
+		{
+			for (int left_neuron = 0; left_neuron < network.layer_sizes[curr_layer - 1]; left_neuron++)
+			{
+				int idx = get_weight_idx(
+					network.state.activation_idx_helper,
+					network.layer_sizes,
+					curr_layer,
+					curr_neuron,
+					left_neuron);
+				std::cout
+					<< "layer:" << curr_layer
+					<< " curr_n:" << curr_neuron
+					<< " left_n:" << left_neuron
+					<< " idx: " << idx
+					<< " value:" << network.state.weights[idx] << " \n";
+
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
+}
+
+void print_biases(n_network_t& network)
+{
+	std::cout
+		<< "------------------------\n"
+		<< "Biases:\n"
+		<< "------------------------\n";
+
+	for (int curr_layer = 1; curr_layer < network.num_layers; curr_layer++)
+	{
+		std::cout << "Layer " << curr_layer << std::endl;
+		for (int curr_neuron = 0; curr_neuron < network.layer_sizes[curr_layer]; curr_neuron++)
+		{
+			int idx = get_bias_idx(network.state.bias_idx_helper, curr_layer, curr_neuron);
+			std::cout
+				<< "layer: " << curr_layer << " neuron: " << curr_neuron << "  "
+				<< "idx " << idx << ": "
+				<< network.state.biases[idx] << " \n";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
 }
 
 /*
@@ -398,6 +657,7 @@ void delete_network(n_network_t* network)
 
 	//delete network - could cause issues
 	delete network;
+
 }
 
 void set_input(n_network_t& network, const digit_image_t& training_data)

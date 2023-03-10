@@ -4,14 +4,15 @@
 int main()
 {
 	std::cout << "Hello World!" << std::endl;
-	/*
+	
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	std::cout << std::endl << "Reading files..." << std::endl;
+	/*
 	digit_image_collection_t training_data_mnist = load_mnist_data(
 		"/data/train-images.idx3-ubyte",
 		"/data/train-labels.idx1-ubyte");
-
+	*/
 	digit_image_collection_t testing_data_mnist = load_mnist_data(
 		"/data/t10k-images.idx3-ubyte",
 		"/data/t10k-labels.idx1-ubyte");
@@ -22,24 +23,21 @@ int main()
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << " ms" << std::endl;
 
 	std::cout << std::endl << "Creating network..." << std::endl << std::endl;
-	*/
-	//n_network_t *network;
-	int* layer_sizes = new int[3]{ 5, 3, 10 };
-	int* index_helper = new int[3]{ 0, 5, 5 + 3 };
+	
+	n_network_t* network = create_network(
+		28 * 28, 
+		std::vector<int> {16, 16}, 
+		std::vector<std::string> {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
+	
+	set_input(*network, testing_data_mnist.at(0));
+	apply_noise(*network, 0.1f);
+	feed_forward(*network);
+	print_output_data(*network);
+	std::cout << "output: " << get_output_label(*network) << std::endl;
+	//print_biases(*network);
+	//print_weights(*network);
+	delete_network(network);
 
-	for (int i = 1; i < 4; i++)
-	{
-		for (int j = 0; j < layer_sizes[i]; j++)
-		{
-			for (int k = 0; k < layer_sizes[i - 1]; k++)
-			{
-				std::cout << "layer: " << i << " node: " << j << " left node: " << k << " idx: "
-					<< get_weight_idx(index_helper, layer_sizes, i, j, k) << std::endl;
-			}
-			std::cout << "layer: " << i << " node: " << j << " bias idx: "
-				<< get_bias_idx(index_helper, i, j) << std::endl;
-		}
-	}
 	/*
 	if (saved_network_exists("network"))
 	{
