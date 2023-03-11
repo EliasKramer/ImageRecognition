@@ -4,23 +4,10 @@
 #include <string>
 #include <iostream>
 #include <chrono>
-#include <random>
 #include <vector>
+#include "util.hpp"
 #include "training_data.hpp"
-
-typedef struct {
-	//the index is the sum all previous layers nodes
-	//this helps giving each element in a 1d array an index
-	int total_nodes;
-	int total_weights;
-	int total_biases;
-
-	int* activation_idx_helper;
-	int* bias_idx_helper;
-
-	float* weights;
-	float* biases;
-} nn_state_t;
+#include "nn_state.hpp"
 
 typedef struct {
 	int num_layers;
@@ -28,7 +15,7 @@ typedef struct {
 
 	float* activations;
 	
-	nn_state_t state;
+	nn_state_t* state;
 	
 	std::string* output_labels;
 } n_network_t;

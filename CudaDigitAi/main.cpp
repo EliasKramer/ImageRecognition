@@ -8,11 +8,11 @@ int main()
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	std::cout << std::endl << "Reading files..." << std::endl;
-	/*
+	
 	digit_image_collection_t training_data_mnist = load_mnist_data(
 		"/data/train-images.idx3-ubyte",
 		"/data/train-labels.idx1-ubyte");
-	*/
+	
 	digit_image_collection_t testing_data_mnist = load_mnist_data(
 		"/data/t10k-images.idx3-ubyte",
 		"/data/t10k-labels.idx1-ubyte");
@@ -34,8 +34,7 @@ int main()
 	feed_forward(*network);
 	print_output_data(*network);
 	std::cout << "output: " << get_output_label(*network) << std::endl;
-	//print_biases(*network);
-	//print_weights(*network);
+	std::cout << "correct: " << test_nn(*network, testing_data_mnist) << "%" << std::endl;
 	delete_network(network);
 
 	/*

@@ -14,6 +14,9 @@
     <ClCompile Include="training_data.cpp">
       <Filter>cpp_files</Filter>
     </ClCompile>
+    <ClCompile Include="nn_state.cpp">
+      <Filter>cpp_files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="header">
@@ -35,6 +38,12 @@
     </ClInclude>
     <ClInclude Include="dot_product.hpp">
       <Filter>cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nn_state.hpp">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="util.hpp">
+      <Filter>header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
