@@ -17,6 +17,9 @@
     <ClCompile Include="nn_state.cpp">
       <Filter>cpp_files</Filter>
     </ClCompile>
+    <ClCompile Include="util.cpp">
+      <Filter>cpp_files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="header">

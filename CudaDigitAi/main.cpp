@@ -1,5 +1,5 @@
-#include <iostream>
 #include "neural_network.hpp"
+#include <iostream>
 #include <chrono>
 int main()
 {
@@ -24,19 +24,15 @@ int main()
 
 	std::cout << std::endl << "Creating network..." << std::endl << std::endl;
 	
-	n_network_t* network = create_network(
-		28 * 28, 
-		std::vector<int> {16, 16}, 
-		std::vector<std::string> {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
-	
+	n_network_t* network;
+	/*
 	set_input(*network, testing_data_mnist.at(0));
 	apply_noise(*network, 0.1f);
 	feed_forward(*network);
 	print_output_data(*network);
 	std::cout << "output: " << get_output_label(*network) << std::endl;
 	std::cout << "correct: " << test_nn(*network, testing_data_mnist) << "%" << std::endl;
-	delete_network(network);
-
+	delete_network(network);*/
 	/*
 	if (saved_network_exists("network"))
 	{
@@ -45,16 +41,26 @@ int main()
 	}
 	else {
 		std::cout << "generating new network" << std::endl;
-		network = create_network(28 * 28, 1, 1, 10);
+		network = create_network(
+			28 * 28,
+			std::vector<int> {16, 16},
+			std::vector<std::string> {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
 		std::cout << "applying noise " << std::endl;
 		apply_noise(*network, 0.1f);
-	}
+	}*/
+	std::cout << "generating new network" << std::endl;
+	network = create_network(
+		28 * 28,
+		std::vector<int> {10, 10},
+		std::vector<std::string> {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
+	std::cout << "applying noise " << std::endl;
+	apply_noise(*network, 0.1f);
 
 	float current_best = test_nn(*network, testing_data_mnist);
 
 	for (int i = 0; i < 1000; i++)
 	{
-		train_on_images(*network, training_data_mnist, 1000, 60);
+		train_on_images(*network, training_data_mnist, 100, 60);
 		float current = test_nn_with_printing(*network, testing_data_mnist);
 		if (current > current_best)
 		{
@@ -66,6 +72,6 @@ int main()
 	}
 
 	delete_network(network);
-	*/
+	
 	return 0;
 }

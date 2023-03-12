@@ -1,4 +1,5 @@
 #include "neural_network.hpp"
+#include <thread>
 
 static inline int get_activation_idx(int* activation_idx_helper, int curr_layer, int curr_neuron)
 {
@@ -178,9 +179,100 @@ float test_nn_with_printing(n_network_t& network, const digit_image_collection_t
 	return percent_correct;
 }
 
+void backprop(
+	n_network_t& network,
+	int current_layer_idx,
+	float* unhappiness_right,
+	int unhappiness_right_size,
+	std::vector<nn_state_t*>& desired_changes,
+	int current_image_idx)
+{
+	if (current_layer_idx == 0)
+	{
+		return;
+	}
+
+	//the unhappiness for the next layer is always as big as the current layer
+	float* unhappiness_for_next_layer = new float[network.layer_sizes[current_layer_idx]];
+	//the index of the layer that will be calculated after the current one
+	int left_idx = current_layer_idx - 1;
+	int right_layer_idx = current_layer_idx + 1;
+	for (int i = 0; i < network.layer_sizes[current_layer_idx]; i++)
+	{
+		//the current activation
+		int activation_idx = get_activation_idx(network.state->activation_idx_helper, current_layer_idx, i);
+		float activation = network.activations[activation_idx];
+		//the bias of the current node
+		int bias_idx = get_bias_idx(network.state->bias_idx_helper, current_layer_idx, i);
+		float bias = network.state->biases[bias_idx];
+
+		float input_without_activation_function = logit(activation);
+		float d_sigmoid = sigmoid_derivative(input_without_activation_function);
+
+		float weighted_unhappiness = 0.0f;
+		for (int j = 0; j < unhappiness_right_size; j++)
+		{
+			weighted_unhappiness += unhappiness_right[j] *
+				network.state->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, right_layer_idx, j, i)];
+		}
+
+		for (int j = 0; j < network.layer_sizes[left_idx]; j++)
+		{
+			float desired_change = 
+				weighted_unhappiness * 
+				d_sigmoid * 
+				//network.activations[left_idx][j];
+				network.activations[get_activation_idx(network.state->activation_idx_helper, left_idx, j)];
+				//set_weight(desired_changes[current_image_idx], current_layer_idx, i, j, desired_change);
+			desired_changes[current_image_idx]->
+				weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, current_layer_idx, i, j)] 
+				+= desired_change;
+		}
+		float desired_change_bias = weighted_unhappiness * d_sigmoid;
+		//set_bias(desired_changes[current_image_idx], current_layer_idx, i, desired_change_bias);
+		desired_changes[current_image_idx]->biases[bias_idx] += desired_change_bias;
+
+		unhappiness_for_next_layer[i] = weighted_unhappiness * d_sigmoid * activation;
+	}
+	backprop(network, current_layer_idx - 1, unhappiness_for_next_layer, network.layer_sizes[current_layer_idx], desired_changes, current_image_idx);
+
+	delete[] unhappiness_for_next_layer;
+}
+static void print_progress(int current, int total, long long elapsed, long long remaining)
+{
+	float percent = (float)current / (float)total * 100.0f;
+	
+	//print percent with 2 decimal places
+	std::cout 
+		<< "Progress: " << std::fixed << std::setprecision(2) << percent << "%" 
+		<< " | remaining " << ms_to_string(remaining) << " | elapsed " << ms_to_string(elapsed)
+		<< std::endl;
+}
+
+static void progress_thread(int* current, int total)
+{
+	
+	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point last_time_updated = start;
+	do
+	{
+		std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(now - last_time_updated).count() < 1000 && *current < total)
+		{
+			continue;
+		}
+		last_time_updated = now;
+		
+		float elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+		float time_remaining = (total - *current) * elapsed_time / *current;
+		
+		print_progress(*current, total, elapsed_time, time_remaining);
+
+	} while (*current < total);
+}
+
 void train_on_images(n_network_t& network, const digit_image_collection_t& training_data_collection, int num_epochs, int batch_size)
 {
-	/*
 	int output_idx = network.num_layers - 1;
 	int left_idx = network.num_layers - 2;
 
@@ -188,15 +280,19 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 
 	std::cout << "Training network..." << std::endl;
 
-	std::vector<nn_state_t> desired_changes;
+	std::vector<nn_state_t*> desired_changes;
 	for (int i = 0; i < batch_size; i++)
 	{
-		desired_changes.push_back(get_empty_state(network));
+		desired_changes.push_back(get_empty_state(network.num_layers, network.layer_sizes));
 	}
 
 	batch_handler_t& batch_handler = get_new_batch_handler(training_data_collection, batch_size);
+	int epoch_idx = 0;
+	std::thread progress_thread(progress_thread, &epoch_idx, num_epochs);
 
-	for (int epoch_idx = 0; epoch_idx < num_epochs; epoch_idx++)
+	progress_thread.detach();
+
+	for (; epoch_idx < num_epochs; epoch_idx++)
 	{
 		digit_image_collection_t training_batch = get_batch(batch_handler);
 
@@ -214,7 +310,7 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 			for (int i = 0; i < network.layer_sizes[output_idx]; i++)
 			{
 				//current output node activation
-				float activation = network.activations[output_idx][i];
+				float activation = network.activations[get_activation_idx(network.state->activation_idx_helper, output_idx, i)];
 				//the expected value for the current output node
 				float expected = 0.0f;
 				if (curr.label == std::to_string(i))
@@ -222,7 +318,7 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 					expected = 1.0f;
 				}
 				//the bias of the current output node
-				float bias = get_bias(network, output_idx, i);
+				float bias = network.state->biases[get_bias_idx(network.state->bias_idx_helper, output_idx, i)];
 
 				//cost derivative
 				float input_without_activation_function = logit(activation);
@@ -235,12 +331,21 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				//calculate unhappiness
 				for (int j = 0; j < network.layer_sizes[left_idx]; j++)
 				{
-					float unhappiness_weight = unhappiness * d_sigmoid * network.activations[left_idx][j];
-					set_weight(desired_changes[current_image_idx], output_idx, i, j, unhappiness_weight);
+					float unhappiness_weight = 
+						unhappiness * 
+						d_sigmoid * 
+						network.activations[get_activation_idx(network.state->activation_idx_helper, left_idx, j)];
+					
+					desired_changes[current_image_idx]->
+						weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, output_idx, i, j)] 
+						+= unhappiness_weight;
 				}
 				//this is how much the bias should change
 				float unhappiness_bias = unhappiness * d_sigmoid;
-				set_bias(desired_changes[current_image_idx], output_idx, i, unhappiness_bias);
+
+				desired_changes[current_image_idx]->
+					biases[get_bias_idx(network.state->bias_idx_helper, output_idx, i)] 
+					+= unhappiness_bias;
 
 				unhappiness_for_next_layer[i] = unhappiness * d_sigmoid;
 			}
@@ -250,7 +355,7 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 
 			current_image_idx++;
 		}
-		nn_state_t& sum_desired_changes = get_empty_state(network);
+		nn_state_t* sum_desired_changes = get_empty_state(network.num_layers, network.layer_sizes);
 		//calculate average
 		for (int i = 0; i < desired_changes.size(); i++)
 		{
@@ -259,35 +364,43 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				for (int k = 0; k < network.layer_sizes[j]; k++)
 				{
 					for (int l = 0; l < network.layer_sizes[j - 1]; l++)
-					{
-						set_weight(sum_desired_changes, j, k, l, get_weight(sum_desired_changes, j, k, l) + get_weight(desired_changes[i], j, k, l));
+					{						
+						sum_desired_changes->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] += 
+							desired_changes[i]->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)];
 					}
-					set_bias(sum_desired_changes, j, k, get_bias(sum_desired_changes, j, k) + get_bias(desired_changes[i], j, k));
+					sum_desired_changes->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] += 
+						desired_changes[i]->biases[get_bias_idx(network.state->bias_idx_helper, j, k)];
 				}
 			}
 		}
-		//apply to network
+		//apply to network (the values get subracted because we want to go in the opposite direction of the gradient)
 		for (int j = 1; j < network.num_layers; j++)
 		{
 			for (int k = 0; k < network.layer_sizes[j]; k++)
 			{
 				for (int l = 0; l < network.layer_sizes[j - 1]; l++)
 				{
-					set_weight(network, j, k, l, get_weight(network, j, k, l) - get_weight(sum_desired_changes, j, k, l) / desired_changes.size());
+					network.state->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] -= 
+						sum_desired_changes->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] / desired_changes.size();
 				}
-				set_bias(network, j, k, get_bias(network, j, k) - get_bias(sum_desired_changes, j, k) / desired_changes.size());
+				network.state->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] -= 
+					sum_desired_changes->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] / desired_changes.size();
 			}
 		}
 		for (int i = 0; i < desired_changes.size(); i++)
 		{
-			clear_state(desired_changes[i]);
+			clear_state(*desired_changes[i]);
 		}
 	}
 	for (int i = 0; i < desired_changes.size(); i++)
 	{
-		delete_state(desired_changes[i]);
+		delete_nn_state(desired_changes[i]);
 	}
-	*/
+	//wait for progress thread to finish
+	if (progress_thread.joinable())
+	{
+		progress_thread.join();
+	}
 }
 
 bool saved_network_exists(std::string file_path)

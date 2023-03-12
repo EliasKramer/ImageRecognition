@@ -1,6 +1,7 @@
 #pragma once
 #include <random>
 #include <chrono>
+#include <sstream>
 
 inline float sigmoid(float x)
 {
@@ -40,3 +41,6 @@ inline float rand_between(float min, float max)
 	// Generate a random number within the given range
 	return distribution(engine);
 }
+
+
+std::string ms_to_string(long long ms);

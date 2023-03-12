@@ -88,6 +88,7 @@
     <ClCompile Include="neural_network.cpp" />
     <ClCompile Include="nn_state.cpp" />
     <ClCompile Include="training_data.cpp" />
+    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dot_product.hpp" />
