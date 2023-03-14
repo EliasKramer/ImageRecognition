@@ -40,7 +40,7 @@ n_network_t* create_network(
 
 	//create weights and biases
 	network->state = get_empty_state(network->num_layers, network->layer_sizes);
-	
+
 	//create activations
 	network->activations = new float[network->state->total_nodes];
 
@@ -160,7 +160,7 @@ float test_nn(n_network_t& network, const digit_image_collection_t& training_dat
 	for (const digit_image_t& curr : training_data_collection)
 	{
 		set_input(network, curr),
-		feed_forward(network);
+			feed_forward(network);
 
 		if (get_output_label(network) == curr.label)
 		{
@@ -218,14 +218,14 @@ void backprop(
 
 		for (int j = 0; j < network.layer_sizes[left_idx]; j++)
 		{
-			float desired_change = 
-				weighted_unhappiness * 
-				d_sigmoid * 
+			float desired_change =
+				weighted_unhappiness *
+				d_sigmoid *
 				//network.activations[left_idx][j];
 				network.activations[get_activation_idx(network.state->activation_idx_helper, left_idx, j)];
-				//set_weight(desired_changes[current_image_idx], current_layer_idx, i, j, desired_change);
+			//set_weight(desired_changes[current_image_idx], current_layer_idx, i, j, desired_change);
 			desired_changes[current_image_idx]->
-				weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, current_layer_idx, i, j)] 
+				weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, current_layer_idx, i, j)]
 				+= desired_change;
 		}
 		float desired_change_bias = weighted_unhappiness * d_sigmoid;
@@ -241,17 +241,17 @@ void backprop(
 static void print_progress(int current, int total, long long elapsed, long long remaining)
 {
 	float percent = (float)current / (float)total * 100.0f;
-	
+
 	//print percent with 2 decimal places
-	std::cout 
-		<< "Progress: " << std::fixed << std::setprecision(2) << percent << "%" 
+	std::cout
+		<< "Progress: " << std::fixed << std::setprecision(2) << percent << "%"
 		<< " | remaining " << ms_to_string(remaining) << " | elapsed " << ms_to_string(elapsed)
-		<< std::endl;
+		<< std::flush << std::endl;
 }
 
 static void progress_thread(int* current, int total)
 {
-	
+
 	std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	std::chrono::steady_clock::time_point last_time_updated = start;
 	do
@@ -262,10 +262,10 @@ static void progress_thread(int* current, int total)
 			continue;
 		}
 		last_time_updated = now;
-		
+
 		float elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
 		float time_remaining = (total - *current) * elapsed_time / *current;
-		
+
 		print_progress(*current, total, elapsed_time, time_remaining);
 
 	} while (*current < total);
@@ -331,20 +331,20 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				//calculate unhappiness
 				for (int j = 0; j < network.layer_sizes[left_idx]; j++)
 				{
-					float unhappiness_weight = 
-						unhappiness * 
-						d_sigmoid * 
+					float unhappiness_weight =
+						unhappiness *
+						d_sigmoid *
 						network.activations[get_activation_idx(network.state->activation_idx_helper, left_idx, j)];
-					
+
 					desired_changes[current_image_idx]->
-						weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, output_idx, i, j)] 
+						weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, output_idx, i, j)]
 						+= unhappiness_weight;
 				}
 				//this is how much the bias should change
 				float unhappiness_bias = unhappiness * d_sigmoid;
 
 				desired_changes[current_image_idx]->
-					biases[get_bias_idx(network.state->bias_idx_helper, output_idx, i)] 
+					biases[get_bias_idx(network.state->bias_idx_helper, output_idx, i)]
 					+= unhappiness_bias;
 
 				unhappiness_for_next_layer[i] = unhappiness * d_sigmoid;
@@ -364,11 +364,11 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 				for (int k = 0; k < network.layer_sizes[j]; k++)
 				{
 					for (int l = 0; l < network.layer_sizes[j - 1]; l++)
-					{						
-						sum_desired_changes->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] += 
+					{
+						sum_desired_changes->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] +=
 							desired_changes[i]->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)];
 					}
-					sum_desired_changes->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] += 
+					sum_desired_changes->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] +=
 						desired_changes[i]->biases[get_bias_idx(network.state->bias_idx_helper, j, k)];
 				}
 			}
@@ -380,10 +380,10 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 			{
 				for (int l = 0; l < network.layer_sizes[j - 1]; l++)
 				{
-					network.state->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] -= 
+					network.state->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] -=
 						sum_desired_changes->weights[get_weight_idx(network.state->activation_idx_helper, network.layer_sizes, j, k, l)] / desired_changes.size();
 				}
-				network.state->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] -= 
+				network.state->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] -=
 					sum_desired_changes->biases[get_bias_idx(network.state->bias_idx_helper, j, k)] / desired_changes.size();
 			}
 		}
@@ -403,23 +403,133 @@ void train_on_images(n_network_t& network, const digit_image_collection_t& train
 	}
 }
 
+inline std::string get_file_name(std::string file)
+{
+	return "../save/" + file + ".state";
+}
+
 bool saved_network_exists(std::string file_path)
 {
-	return false;
+	std::ifstream file(get_file_name(file_path));
+	return file.good();
 }
 
 void save_network(n_network_t& network, std::string file_path)
 {
+	std::cout << "Save network " << file_path << std::endl;
+
+	//start output file stream
+	std::ofstream out(get_file_name(file_path), std::ios::out | std::ios::binary);
+
+	//write number of layers
+	out.write(reinterpret_cast<char*>(&network.num_layers), sizeof(int));
+
+	//write layer sizes
+	out.write(reinterpret_cast<char*>(network.layer_sizes), sizeof(int) * network.num_layers);
+
+	//create buffer. this way we dont have to call write that often, which is very costly
+	
+	int weight_buffer_size = network.state->total_weights;
+	float* write_buffer_weight = new float[weight_buffer_size];
+	int bias_buffer_size = network.state->total_biases;
+	float* write_buffer_bias = new float[bias_buffer_size];
+
+	for (int i = 0; i < weight_buffer_size; i++)
+	{
+		write_buffer_weight[i] = network.state->weights[i];
+	}
+	for (int i = 0; i < bias_buffer_size; i++)
+	{
+		write_buffer_bias[i] = network.state->biases[i];
+	}
+
+	//write the buffer to the file
+	out.write(reinterpret_cast<const char*>(write_buffer_weight), weight_buffer_size * sizeof(float));
+	out.write(reinterpret_cast<const char*>(write_buffer_bias), bias_buffer_size * sizeof(float));
+
+	//delete the buffer
+	delete[] write_buffer_weight;
+	delete[] write_buffer_bias;
+
+	//close the output stream
+	out.close();
 }
 
 n_network_t* load_network(std::string file_path)
 {
-	return nullptr;
+	std::cout << "Loading network " << file_path << std::endl;
+
+	//opoen input file stream
+	std::ifstream in(get_file_name(file_path), std::ios::in | std::ios::binary);
+
+	//read how many layers there are
+	int num_layers;
+	in.read(reinterpret_cast<char*>(&num_layers), sizeof(int));
+
+	//read the sizes of the layers
+	int* layer_sizes = new int[num_layers];
+	in.read(reinterpret_cast<char*>(layer_sizes), num_layers * sizeof(int));
+
+	//print the layer sizes
+	std::cout << "Layer sizes: ";
+	for (int i = 0; i < num_layers; i++)
+	{
+		std::cout << layer_sizes[i] << " ";
+	}
+	std::cout << std::endl;
+
+	std::vector<int> hidden_layer_sizes;
+
+	for (int i = 1; i < num_layers - 1; i++)
+	{
+		hidden_layer_sizes.push_back(layer_sizes[i]);
+	}
+
+	std::vector<std::string> labels = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+	if (layer_sizes[num_layers - 1] != labels.size())
+	{
+		std::cerr << "Error: The number of labels does not match the number of output neurons" << std::endl;
+		exit(1);
+	}
+
+	//create a new neural network
+	//CAUTION this only works for networks with the same hidden layer sizes
+	n_network_t* retVal = create_network(layer_sizes[0], hidden_layer_sizes, labels);
+	delete[] layer_sizes;
+
+	//create buffer. this way we dont have to call read that often, which is very costly
+	int weight_buffer_size = retVal->state->total_weights;
+	float* read_buffer_weight = new float[weight_buffer_size];
+	int bias_buffer_size = retVal->state->total_biases;
+	float* read_buffer_bias = new float[bias_buffer_size];
+
+	//read the data from the file
+	in.read(reinterpret_cast<char*>(read_buffer_weight), weight_buffer_size * sizeof(float));
+	in.read(reinterpret_cast<char*>(read_buffer_bias), bias_buffer_size * sizeof(float));
+
+	//copy the data from the buffer to the network
+	for (int i = 0; i < weight_buffer_size; i++)
+	{
+		retVal->state->weights[i] = read_buffer_weight[i];
+	}
+	for (int i = 0; i < bias_buffer_size; i++)
+	{
+		retVal->state->biases[i] = read_buffer_bias[i];
+	}
+
+	//delete the buffer
+	delete[] read_buffer_weight;
+	delete[] read_buffer_bias;
+
+	//close the input stream
+	in.close();
+
+	return retVal;
 }
 
 void print_weights(n_network_t& network)
 {
-	std::cout 
+	std::cout
 		<< "------------------------\n"
 		<< "Weights:\n"
 		<< "------------------------\n";
