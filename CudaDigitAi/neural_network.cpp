@@ -1,18 +1,6 @@
 #include "neural_network.hpp"
 #include <thread>
-
-static inline int get_activation_idx(int* activation_idx_helper, int curr_layer, int curr_neuron)
-{
-	return activation_idx_helper[curr_layer] + curr_neuron;
-}
-static inline int get_bias_idx(int* bias_idx_helper, int curr_layer, int curr_neuron)
-{
-	return bias_idx_helper[curr_layer - 1] + curr_neuron;
-}
-static inline int get_weight_idx(int* activation_idx_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron)
-{
-	return get_activation_idx(activation_idx_helper, curr_layer - 1, curr_neuron) * layer_sizes[curr_layer - 1] + left_neuron;
-}
+#include <mutex>
 
 n_network_t* create_network(
 	int input_size,
@@ -238,6 +226,7 @@ void backprop(
 
 	delete[] unhappiness_for_next_layer;
 }
+
 static void print_progress(int current, int total, long long elapsed, long long remaining)
 {
 	float percent = (float)current / (float)total * 100.0f;
@@ -245,7 +234,8 @@ static void print_progress(int current, int total, long long elapsed, long long 
 	//print percent with 2 decimal places
 	std::cout
 		<< "Progress: " << std::fixed << std::setprecision(2) << percent << "%"
-		<< " | remaining " << ms_to_string(remaining) << " | elapsed " << ms_to_string(elapsed)
+		<< " | remaining " << ms_to_string(remaining) 
+		<< " | elapsed " << ms_to_string(elapsed)
 		<< std::flush << std::endl;
 }
 

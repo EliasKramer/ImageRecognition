@@ -39,6 +39,10 @@ typedef struct {
 	int* bias_idx_helper;
 } nn_state_t;
 
+int get_activation_idx(int* activation_idx_helper, int curr_layer, int curr_neuron);
+int get_bias_idx(int* bias_idx_helper, int curr_layer, int curr_neuron);
+int get_weight_idx(int* activation_idx_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron);
+
 nn_state_t* get_empty_state(int num_layers, int* layer_sizes);
 void clear_state(nn_state_t& state);
 void delete_nn_state(nn_state_t* state);

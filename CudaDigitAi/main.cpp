@@ -1,4 +1,5 @@
 #include "neural_network.hpp"
+#include "cuda_single_nn.hpp"
 #include <iostream>
 #include <chrono>
 int main()
@@ -40,6 +41,8 @@ int main()
 		std::cout << "applying noise " << std::endl;
 		apply_noise(*network, 0.1f);
 	}
+	cuda_train_on_images(network, training_data_mnist, 100, 60);
+	/*
 	float current_best = test_nn(*network, testing_data_mnist);
 
 	for (int i = 0; i < 1000; i++)
@@ -57,7 +60,7 @@ int main()
 	}
 
 	std::cout << "best network has an accuracy of " << current_best << "%" << std::endl;
-
+	*/
 	delete_network(network);
 	
 	return 0;

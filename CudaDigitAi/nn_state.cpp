@@ -1,5 +1,18 @@
 #include "nn_state.hpp"
 
+int get_activation_idx(int* activation_idx_helper, int curr_layer, int curr_neuron)
+{
+	return activation_idx_helper[curr_layer] + curr_neuron;
+}
+int get_bias_idx(int* bias_idx_helper, int curr_layer, int curr_neuron)
+{
+	return bias_idx_helper[curr_layer - 1] + curr_neuron;
+}
+int get_weight_idx(int* activation_idx_helper, int* layer_sizes, int curr_layer, int curr_neuron, int left_neuron)
+{
+	return get_activation_idx(activation_idx_helper, curr_layer - 1, curr_neuron) * layer_sizes[curr_layer - 1] + left_neuron;
+}
+
 nn_state_t* get_empty_state(int num_layers, int* layer_sizes)
 {
 	nn_state_t* state = new nn_state_t();
