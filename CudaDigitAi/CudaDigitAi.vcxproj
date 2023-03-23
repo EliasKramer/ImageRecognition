@@ -80,18 +80,21 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="dot_product.cu" />
-    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="cuda_single_nn.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="neural_network.cpp" />
+    <ClCompile Include="nn_state.cpp" />
     <ClCompile Include="training_data.cpp" />
+    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dot_product.hpp" />
+    <ClInclude Include="cuda_single_nn.hpp" />
     <ClInclude Include="neural_network.hpp" />
+    <ClInclude Include="nn_state.hpp" />
     <ClInclude Include="training_data.hpp" />
+    <ClInclude Include="util.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
