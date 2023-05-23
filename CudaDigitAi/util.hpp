@@ -7,7 +7,7 @@ inline float sigmoid(float x)
 {
 	return 1.0f / (1.0f + exp(-x));
 }
-//reverse sigmoid
+//inverse sigmoid
 inline float logit(float x)
 {
 	return log(x / (1.0f - x));

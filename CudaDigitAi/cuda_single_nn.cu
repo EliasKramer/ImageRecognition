@@ -65,7 +65,6 @@ void cuda_train_on_images(n_network_t* network, digit_image_collection_t& images
 {
 	set_input(*network, images.at(0));
 
-
 	float* device_activations = copy_arr_to_gpu<float>(network->activations, network->state->total_nodes);
 	float* device_weights = copy_arr_to_gpu<float>(network->state->weights, network->state->total_weights);
 	float* device_biases = copy_arr_to_gpu<float>(network->state->biases, network->state->total_biases);
@@ -73,6 +72,9 @@ void cuda_train_on_images(n_network_t* network, digit_image_collection_t& images
 	int* device_layer_sizes = copy_arr_to_gpu<int>(network->layer_sizes, network->num_layers);
 	int* device_activation_idx_helper = copy_arr_to_gpu<int>(network->state->activation_idx_helper, network->num_layers);
 	int* device_bias_idx_helper = copy_arr_to_gpu<int>(network->state->bias_idx_helper, network->num_layers);
+
+	//start timer
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
 	for (int i = 1; i < network->num_layers; i++)
 	{
@@ -85,13 +87,27 @@ void cuda_train_on_images(n_network_t* network, digit_image_collection_t& images
 			device_activation_idx_helper,
 			device_bias_idx_helper);
 		//wait for process to finish
-		cudaDeviceSynchronize();
 	}
+	cudaDeviceSynchronize();
 	//copy output activations to host
 	float* copy_of_device_activations = new float[network->state->total_nodes];
 	cudaMemcpy(copy_of_device_activations, device_activations, sizeof(float) * network->state->total_nodes, cudaMemcpyDeviceToHost);
 
+	//stop timer
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+
+	//print time
+	std::cout << "time taken gpu : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+	
+	//start timer
+	start = std::chrono::high_resolution_clock::now();
 	feed_forward(*network);
+	//stop timer
+	end = std::chrono::high_resolution_clock::now();
+
+	//print time
+	std::cout << "time taken cpu : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+
 	//print if they are the same
 	for (int i = 1; i < network->num_layers; i++)
 	{

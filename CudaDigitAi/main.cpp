@@ -5,7 +5,7 @@
 int main()
 {
 	std::cout << "Hello World!" << std::endl;
-	
+
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	std::cout << std::endl << "Reading files..." << std::endl;
@@ -27,7 +27,10 @@ int main()
 	
 	n_network_t* network;
 
-	if (saved_network_exists("network"))
+	bool should_load_existing_nn = false;
+	//should_load_existing_nn = saved_network_exists("network");
+	
+	if (should_load_existing_nn)
 	{
 		std::cout << "loading existing network..." << std::endl;
 		network = load_network("network");
@@ -36,15 +39,16 @@ int main()
 		std::cout << "generating new network" << std::endl;
 		network = create_network(
 			28 * 28,
-			std::vector<int> {16, 16},
+			std::vector<int> {25, 25},
 			std::vector<std::string> {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
 		std::cout << "applying noise " << std::endl;
 		apply_noise(*network, 0.1f);
 	}
-	cuda_train_on_images(network, training_data_mnist, 100, 60);
-	/*
-	float current_best = test_nn(*network, testing_data_mnist);
+	//cuda_train_on_images(network, training_data_mnist, 100, 60);
+	
 
+	float current_best = test_nn(*network, testing_data_mnist);
+	
 	for (int i = 0; i < 1000; i++)
 	{
 		std::cout << "current best is " << current_best << std::endl;
@@ -60,7 +64,7 @@ int main()
 	}
 
 	std::cout << "best network has an accuracy of " << current_best << "%" << std::endl;
-	*/
+	
 	delete_network(network);
 	
 	return 0;
