@@ -160,10 +160,13 @@ float test_nn(n_network_t& network, const digit_image_collection_t& training_dat
 }
 
 float test_nn_with_printing(n_network_t& network, const digit_image_collection_t& training_data_collection)
-{
+{	
 	std::cout << std::endl << "Testing network..." << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();
 	float percent_correct = test_nn(network, training_data_collection);
+	auto end = std::chrono::high_resolution_clock::now();
 	std::cout << std::endl << "Testing done. Percent correct: " << percent_correct << "%" << std::endl;
+	std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
 	return percent_correct;
 }
 

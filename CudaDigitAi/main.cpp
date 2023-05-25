@@ -39,7 +39,7 @@ int main()
 		std::cout << "generating new network" << std::endl;
 		network = create_network(
 			28 * 28,
-			std::vector<int> {25, 25},
+			std::vector<int> {16, 16},
 			std::vector<std::string> {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
 		std::cout << "applying noise " << std::endl;
 		apply_noise(*network, 0.1f);
